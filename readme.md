@@ -5,5 +5,6 @@ For a look at the curriculumn and classes taken, please see: [MSBA course curric
 ## Courses Taken:
 
 ### Optimization
+* [Liability-MatchingOptimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Liability_Replication)
 ### Analytics for Unstructured Data
 
