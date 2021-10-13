@@ -1,3 +1,7 @@
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Brandt-moreThan4/UT-Projects/blob/master/Analytics_for_Unstructured_Data/Car_Brands_Analysis/Unstructured_Data__Assignment_1.ipynb)
+
+
+
 # Analysis Of Car Brand Associations from Scraped Forum Posts on Edmunds 
 
 In this assignment you have been hired as an analytics consultant by JD power and Associates, who wants to perform a competitive analysis of the entry level luxury car market in the USA. Your job is to give advice/insights to these individuals based on the analysis of social media conversations. The detailed tasks are described below. 
