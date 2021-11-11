@@ -15,6 +15,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
   
 ### [Analytics for Unstructured Data](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Analytics_for_Unstructured_Data)
 * [Car Brand Analysis](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Analytics_for_Unstructured_Data/Car_Brands_Analysis)
+* Creating a Beer Recommender
 
 
 ## [Advanced Machine Learning](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Advanced_Machine_Learning)
