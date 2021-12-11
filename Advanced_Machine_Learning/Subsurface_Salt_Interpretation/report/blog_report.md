@@ -1,19 +1,11 @@
 # Subsurface Salt Interpretation Automation
 ## *Enhancing ML workflow for semantic segmentation* 
 
-<br><br><br>
 
 
 
-Team Members: 
-
-Brandt Green<br>
-Yi-Ting (Branda) HuangJessie Lee
-Meha Mehta
-Shengxiang Wu
-
-
-
+## Team Members
+Brandt Green, Yi-Ting (Branda) Huang, Jessie Lee, Meha Mehta, Shengxiang Wu
 
 
 
@@ -199,21 +191,124 @@ outputs = Conv2D(filters=1, kernel_size=(1,1), activation='sigmoid') (c9)
 unet_model = Model(inputs=[inputs], outputs=[outputs])
 unet_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[mean_iou, 'accuracy'])
 ```
+
 **<center>Figure 9. UNet workflow in Python</center>**
+
+You can see our implementation closely follows U-Net. There are four encoding steps and four decoding steps. In each encoding step, there are two convolutional layers followed by a max pooling step, which halves the image resolution. The next step receives the output from max pooling of the previous layer. The four decoding steps that follow operate similarly except these layers replace the max pooling layer with a transpose convolutional layer. This layer has the opposite effect of the max pooling; it doubles the image size, which helps us to work our output dimensions back up to the size of the original input. The result of the transpose convolutional layer is concatenated with the output from the same-size complementary layer on the other side of the ‘U’. Finally the model is topped off with a single-channel convolutional filter that uses the sigmoid activation function. This will output for us a 2D feature map, and the sigmoid transformation allows us to interpret the resulting numbers as probabilities that each output pixel is salt or not!
+
+This results in what we call our “Base U-Net model”, which has approximately 500,000 trainable parameters. We trained this model on both the original data set and our augmented data set. The results are presented in the next section.
 
 
 ## 4.3 Enhancements on the Base Unet Model:
 
+Due to the nature of salt in seismic images, we hypothesized that we could improve our results by using edge-enhanced pictures. For this, we used Sobel edge-enhancing convolution. An example of this can be seen in Fig. 10.
+
+![sobel](sobel.png)
+**<center>Figure 10. Sobel Convolution for edge detection illustration</center>**
+
 # 5. Model Training and Results
+As explained above, we trained our model a total of five times, as we made tweaks in pursuit of better performance. The loss metric used was binary cross entropy, and the optimizer was Adam. 
+
+For each iteration we specified training of 50 epochs, but included an early stopping call back to prevent continued training if the error has not decreased in 5 straight epochs. The shortest training period was 2 hours and then longest was closer to 5.
+
 ## 5.1 Metrics
+
+Before discussing the results of each model, we need to understand how the results are evaluated. The evaluation of semantic segmentation models necessitates the use of additional metrics to truly discern model performance. We used the following two metrics: pixel accuracy and IoU.
+
+**Pixel accuracy** is straightforward for anyone familiar with standard classification tasks. For each image, it is simply the percentage of correctly classified pixels:
+$$Pixel\: Accuracy = \frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative}$$
+
+Then, we calculate the accuracy for the entire model as the mean accuracy of all images.
+
+**IoU** stands for Intersection-Over-Union, and is also intuitive when thinking about how to judge the correctness of a model based on an entire image classification (Fig. 11). It is calculated as the area of the overlap between the predicted mask and the ground truth mask, divided by the combined area of both masks. It’s best understood pictorially: 
+
+![iou](iou.png)
+**<center>Figure 11. IoU explanation</center>**
+
+The formula for calculating IOU is:
+$$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$
 
 ## 5.2 Results
 
+The five separate model trainings and their results on the validation set are displayed in the chart below. The main difference between each model is just the data that was fed into it. The first three include successfully more implementations of data augmentation, and the final two were input Sobel Filtered data.
+
+| Model Description | Training Data | Accuracy | IoU|
+|   ---    |  ---  | --- | --- |
+| Base U-Net | 3,500| 92.8% | 58.7% |
+|U-Net (Including UD Flips)| 7,000 | 93.5%| 69.8% |
+|U-Net (UD, LR, and 90 degree rotations)| 14,000 | 93.4% | 72.5%|
+|U-Net (Sobel Filtered Data)| 14,000 | 92.2% | 60.1% |
+
+You can see the best results were obtained when we used all three data augmentation techniques, but did not apply the sobel filter. Our best model is the model with augmented training data (14000 images) and without the sobel edge detection filter. It implied that increasing the training data size will improve the model performance, although it would increase the training time of each epoch.  In addition, because a sobel filter before the U-Net would filter out some of the information contained in each image, it didn’t help to improve our model accuracy. 
+
+Below you can see the performance of our best model throughout the training process (Fig. 12). Both of our evaluation metrics appear to plateau after about 7-8 epochs.
+
+![accuracy](accuracy.png)
+![val_iou](iou.png)
+**<center>Figure 12. Comparison of training IoU evolution with epoch (upper: training set IoU; lower: validation set IoU)</center>**
+
+
 ## 5.3 Model at Work
+To visualize how the model does in predicting salt, we used 2 outputs and compared it with ‘true’ salt body interpreted by human interpreters (Fig. 13). It’s also with noting that since the original mask were created from a connected 3D volume, all human interpretations were performed with a context of nearby cells, which is not available for our model training, where all input images are small local images. 
+
+As we can see, except for local disturbance that was ambiguous even for the human eye, i.e., bottom left corner for the upper image (Fig 13), most of the interpretations are impressively accurate. 
+
+![predictions](predictions.png)
+**<center>Figure 13 Model result illustration (column 1: original seismic image; column 2: predicted masks; column 3: ‘true’  masks)</center>**
+
 
 # 6. Conclusion
+
 ## 6.1 Key Takeaways
+
+From the results, the solution that has the highest accuracy score of 93.4% and IOU of 72.5% was based on the original architecture of U-Net with 3 data argumentation techniques used. We can conclude that data augmentation including Up-Down flip, Left-Right flip, and 90 degree rotation have effectively improved the model performance. A larger number of epochs is also useful. On the other hand, an additional sobel edge detection layer before U-Net and an additional channel to U-Net did not have significant impacts on the enhancement of the model.
 
 ## 6.2 Future work
 
+There’s still so much that can be done with this project. The following is a short list of potential ideas and next steps we would like to explore to escalate our solution to the next level:
+Increasing Training Dataset Size
+To better train the model with more variations of textures and characteristics, more input images and masks would benefit. Increasing the training set would potentially capture not only the morphologic and textural variation caused by location of salt such as salt from North Sea and West Africa, it could also train the model to interpret seismic frequency, angle stack and any other pre- and post-stack processing related variations.  
+There are many existing salt interpretation products in the industry, and only making a small fraction of them available to train the model would have a high potential of improving the model. 
+In the ideal application, we always want to create a global training set while adding additional training data for specific local applications using the corresponding local salt image data.
+More Data Augmentation
+What if more training data is limited or not available? We achieved reasonable model improvement with the image augmentations that we applied and because of this success we think it’s worth further investigating the power and limits of this technique. Would our model perform even better if we added in more image alterations? Should we add 180 degree rotations? Image blurs? Elastic deformations? Which alterations work best for our data set? How many alterations are too many? Certainly an intriguing topic to dig into.
+
+Pseudo Labeling
+Pseudo-labeling is a simple semi-supervised learning algorithm which attempts to incorporate unlabeled data into the model training process. The model does this by using a partially trained model to predict the unlabeled data, and then feeds this prediction back to the model for more training! This is another one of those techniques that at first pass, seems a bit like data wizardry, but as we mentioned previously, we have 18,000 unlabeled images and we would love to find a way to use this untapped data. For further explanation and sample code, see reference [11]: 
+
+Different Segmentation Models
+Though U-net is seen as a more stable solution with proven success for this type of semantic segmentation problem, there are several extensions to U-net that should be considered (eg: ResNet-Unet) along with other architectures (eg: MaskRCNN, FPN) that if implemented, could provide performance improvements. 
+
+Incorporate More Evaluation Metrics
+We can also include other common evaluation metrics [12] for semantic segmentation to get a more complete picture of the model performance. Dice Coefficient is another popular metric, similar to IoU with the main difference being that double weight is given to positive co-occurrences in the Dice Coefficient:
+$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
+$$IoU = \frac{Dice}{2-Dice}$$
+More metrics will give us a richer view into our model’s strengths and weaknesses.
+
+Transfer Learning
+Transfer learning involves using a model that has been pre-trained for another task, slightly modifying the model as needed and then applying it to your project specifications. There’s been a lot of success with this approach and we think it’s worth exploring. The reason for our lack of faith is because the vast majority of open source pre-trained models are trained on data sets that are drastically different from the seismic imaging data we have. Most are trained on ImageNet [xx] which consists largely of everyday sights and objects such as trees,people, and cars. That being said, we still think it’s worth trying due to the large success we’ve seen others have using this approach.
+
+
+## Concluding Thoughts
+Seismic Imaging and salt identification play an important role in oil and gas discovery and there is a large amount of interpretation needed. The commercialization of any application, would ultimately require the model to be scalable to large volumes with large images size and eventually applicable directly to 3D volumes instead of 2D images. Salt interpretation automation is still an ongoing research topic that could have a significant economic impact by accelerating project timeline and labor cost. 
+
+
 # 7. References
+
+[1] https://glossary.oilfield.slb.com/Terms/s/seismic_acquisition.aspx
+<br>
+[2] https://en.wikipedia.org/wiki/Reflection_seismology
+<br>
+[3] https://ocw.mit.edu/courses/earth-atmospheric-and-planetary-sciences/12-510-introduction-to-seismology-spring-2010/lecture-notes/lec9.pdf
+<br>
+[4] https://en.wikipedia.org/wiki/Acoustic_impedance
+<br>
+[5] https://www.kaggle.com/c/tgs-salt-identification-challenge/data
+<br>
+[6] https://towardsdatascience.com/convolutional-neural-networks-explained-9cc5188c4939 <br>
+[7] https://cs231n.github.io/convolutional-networks/ <br>
+[8] https://www.jeremyjordan.me/semantic-segmentation/ <br>
+[9] https://lmb.informatik.uni-freiburg.de/people/ronneber/u-net/ <br>
+[10] https://arxiv.org/pdf/1505.04597.pdf <br>
+[11] https://towardsdatascience.com/pseudo-labeling-to-deal-with-small-datasets-what-why-how-fd6f903213af <br>
+[12] https://towardsdatascience.com/metrics-to-evaluate-your-semantic-segmentation-model-6bcb99639aa2
