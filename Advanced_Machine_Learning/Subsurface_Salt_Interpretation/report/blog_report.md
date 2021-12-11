@@ -59,8 +59,6 @@ The strength of seismic reflections at any boundary is defined by the equation [
 
 <img src="https://render.githubusercontent.com/render/math?math=RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1}">
 
-$$ RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1} $$
-
 Where RC is the reflection coefficient of compressional waves,  ρ2, v2  and ρ1, v1 are the density and travel velocity of compressional waves in overlain medium 2 and underlain medium 1 respectively. Due to the high velocity (V2) of compressional waves in salt (~4400 m/s) compared with surrounding sediment,  (ρ2v2 - ρ1v1) term is large resulting in strong positive inflection at top salt, where salt base is characterized by a strong negative reflection. 
 
 When human experts (geoscientists) examine the images, there are a few characteristics that help them identify the areas containing salt:
@@ -233,8 +231,6 @@ Before discussing the results of each model, we need to understand how the resul
 
 <img src="https://render.githubusercontent.com/render/math?math=Pixel\: Accuracy = \frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative}">
 
-$$Pixel\: Accuracy = \frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative}$$
-
 Then, we calculate the accuracy for the entire model as the mean accuracy of all images.
 
 **IoU** stands for Intersection-Over-Union, and is also intuitive when thinking about how to judge the correctness of a model based on an entire image classification (Fig. 11). It is calculated as the area of the overlap between the predicted mask and the ground truth mask, divided by the combined area of both masks. It’s best understood pictorially: 
@@ -244,7 +240,6 @@ Then, we calculate the accuracy for the entire model as the mean accuracy of all
 
 The formula for calculating IOU is:
 <img src="https://render.githubusercontent.com/render/math?math=$$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$">
-$$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$
 
 ## 5.2 Results
 
@@ -305,11 +300,10 @@ Though U-net is seen as a more stable solution with proven success for this type
 ### Incorporate More Evaluation Metrics
 We can also include other common evaluation metrics [12] for semantic segmentation to get a more complete picture of the model performance. Dice Coefficient is another popular metric, similar to IoU with the main difference being that double weight is given to positive co-occurrences in the Dice Coefficient:
 
-<img src="https://render.githubusercontent.com/render/math?math=$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
-$$IoU = \frac{Dice}{2-Dice}$$">
+<img src="https://render.githubusercontent.com/render/math?math=$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$">
+<img src="https://render.githubusercontent.com/render/math?math=$$IoU = \frac{Dice}{2-Dice}$$">
 
-$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
-$$IoU = \frac{Dice}{2-Dice}$$
+
 More metrics will give us a richer view into our model’s strengths and weaknesses.
 
 ### Transfer Learning
