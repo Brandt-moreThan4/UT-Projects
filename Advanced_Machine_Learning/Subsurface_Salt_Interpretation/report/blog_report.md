@@ -14,23 +14,7 @@ Shengxiang Wu
 
 
 
-``` python
-# Number of inputs equals the number of pixels in our images * number of channels, which in this case is 1 because the images are greyscale.
 
-inputs = Input((IMG_WIDTH, IMG_HEIGHT, 1))
- 
-# Layer to convert the pixels to 0-1 scales which is expected from later on layers
-s = Lambda(lambda img_pixels: img_pixels / 255) (inputs)
-
-
-c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (s)
-c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (c1)
-p1 = MaxPooling2D((2, 2)) (c1)
-
-c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (p1)
-c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (c2)
-p2 = MaxPooling2D(pool_size=(2, 2)) (c2)
-```
 
 
 ## Abstract
@@ -41,4 +25,35 @@ The current model we have developed is built on 4000 original input 2D salt imag
 
 ![Abstract Image](abstract_img.png)
 
+<br>
+Link to Implementation in notebook: [Notebook Github](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/code_team_contrasting_channel_final.ipynb)
 
+
+<br><br
+# 1. Statement of Purpose
+
+## 1.1 Why are we interested in salt?
+
+Before getting too into the weeds on the data set and model building, we would like to provide further background information on salt’s origins and relevance. Salt was deposited when oceans started to open millions of years ago and later arose through earth’s strata due to its plasticity and relatively low density, to form variable shaped bodies such as  domes, canopies or diapirs. In places such as West Africa, the Gulf of Mexico and North sea, billions of barrels of hydrocarbon resources (oil and gas) were trapped  above and around salt due to its very low permeability. As a result, salt related structures are hot targets for oil and gas exploration because often, finding salt can mean finding oil. (Fig. 1). 
+
+![Oil Trap](oil_trap.png)
+
+**<center>Figure 1. Salt Trap for Oil</center>**
+
+<br><br>
+
+Aside from facilitating oil discovery, knowing the location of salt deposits also bears significance with respect to drilling safety. If the salt appears too shallow with trapped gas, it could be a drilling hazard that if not properly planned for and handled could cause explosions. Therefore, accurately identifying salt becomes critical for drilling safety.
+
+
+Clearly, identifying and accurately mapping salt deposits is critical in the oil and gas industry. Unfortunately, human interpretation of salt bodies on seismic data is tedious, time consuming and often subjective. The turnaround time of an expert’s manual salt interpretation could take months. By applying machine learning algorithms, we hope to build the first piece of an ML workflow that automatically and accurately identifies salt bodies using 2D seismic images. While we do not tackle the challenge here, the next phase of the complete workflow would involve piecing together the 2D interpretations into 3D seismic volumes. The new process will take a few hours to a few days; a drastic improvement upon current methodologies. This efficiency gain removes one bottleneck in the project timeline which would ultimately create substantial economic value on a high capex project.
+
+
+## 1.2 Image characteristics of salt
+
+How exactly are these seismic images obtained? Subsurface salt bodies are almost exclusively imaged using a technique called reflection seismology. [1] In offshore environments, this entails air guns shooting sound waves to the ocean bottom (Fig.2; [2]), which are then reflected by earth’s strata. The reflected waves are recorded by hydrophones and the data is processed to form a 3D seismic volume from which geoscientists interpret various subsurface features, e.g., salt bodies (Fig. 3). The 3D volume is then sliced into a series of 2D images for salt interpretation and later, can then be resembled to represent a 3D body.
+
+![air_guns](air_guns.png)
+**<center>Figure 2. Seismic Acquisition</center>**
+
+![salt_body](salt_body.png)
+**<center>Figure 2. Seismic Data with Salt in Depth</center>**
