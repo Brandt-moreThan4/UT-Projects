@@ -49,7 +49,7 @@ How exactly are these seismic images obtained? Subsurface salt bodies are almost
 ![air_guns](air_guns.png)
 **<center>Figure 2. Seismic Acquisition</center>**
 
-<img src="salt_body.png" width="200">
+<img src="salt_body.png" width="500">
 
 **<center>Figure 3. Seismic Data with Salt in Depth</center>**
 
@@ -239,7 +239,7 @@ Then, we calculate the accuracy for the entire model as the mean accuracy of all
 **<center>Figure 11. IoU explanation</center>**
 
 The formula for calculating IOU is:
-<img src="https://render.githubusercontent.com/render/math?math=$$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$">
+<img src="iou_eq.png">
 
 ## 5.2 Results
 
@@ -300,8 +300,9 @@ Though U-net is seen as a more stable solution with proven success for this type
 ### Incorporate More Evaluation Metrics
 We can also include other common evaluation metrics [12] for semantic segmentation to get a more complete picture of the model performance. Dice Coefficient is another popular metric, similar to IoU with the main difference being that double weight is given to positive co-occurrences in the Dice Coefficient:
 
-<img src="https://render.githubusercontent.com/render/math?math=$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$">
-<img src="https://render.githubusercontent.com/render/math?math=$$IoU = \frac{Dice}{2-Dice}$$">
+<img src="dice.png">
+
+<img src="iou_eq2.png">
 
 
 More metrics will give us a richer view into our model’s strengths and weaknesses.
