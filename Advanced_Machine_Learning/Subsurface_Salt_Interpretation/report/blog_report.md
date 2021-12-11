@@ -7,6 +7,7 @@
 ## Team Members
 Brandt Green, Yi-Ting (Branda) Huang, Jessie Lee, Meha Mehta, Shengxiang Wu
 
+<img src="https://render.githubusercontent.com/render/math?math=RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1}">
 
 
 ## Abstract
