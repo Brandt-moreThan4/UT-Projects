@@ -19,7 +19,7 @@ The current model we have developed is built on 4000 original input 2D salt imag
 
 <br>
 
-Link to Implementation in notebook: [https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb)
+Link to implementation code: [https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb)
 
 
 <br>
@@ -34,7 +34,7 @@ Before getting too into the weeds on the data set and model building, we would l
 
 **<center>Figure 1. Salt Trap for Oil</center>**
 
-<br><br>
+<br>
 
 Aside from facilitating oil discovery, knowing the location of salt deposits also bears significance with respect to drilling safety. If the salt appears too shallow with trapped gas, it could be a drilling hazard that if not properly planned for and handled could cause explosions. Therefore, accurately identifying salt becomes critical for drilling safety.
 
@@ -46,15 +46,20 @@ Clearly, identifying and accurately mapping salt deposits is critical in the oil
 
 How exactly are these seismic images obtained? Subsurface salt bodies are almost exclusively imaged using a technique called reflection seismology. [1] In offshore environments, this entails air guns shooting sound waves to the ocean bottom (Fig.2; [2]), which are then reflected by earth’s strata. The reflected waves are recorded by hydrophones and the data is processed to form a 3D seismic volume from which geoscientists interpret various subsurface features, e.g., salt bodies (Fig. 3). The 3D volume is then sliced into a series of 2D images for salt interpretation and later, can then be resembled to represent a 3D body.
 
+<br>
+
+
 ![air_guns](air_guns.png)
 **<center>Figure 2. Seismic Acquisition</center>**
 
 ![salt_body](salt_body.png)
 **<center>Figure 3. Seismic Data with Salt in Depth</center>**
 
+<br>
+
 The strength of seismic reflections at any boundary is defined by the equation [3,4]:
 
-![sal_equation](sal_equation.png)
+$$ RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1} $$
 
 Where RC is the reflection coefficient of compressional waves,  ρ2, v2  and ρ1, v1 are the density and travel velocity of compressional waves in overlain medium 2 and underlain medium 1 respectively. Due to the high velocity (V2) of compressional waves in salt (~4400 m/s) compared with surrounding sediment,  (ρ2v2 - ρ1v1) term is large resulting in strong positive inflection at top salt, where salt base is characterized by a strong negative reflection. 
 
@@ -73,7 +78,7 @@ In summary, the characters and features of salt in seismic images present severa
 The data for this project came straight from a Kaggle Competition: TGS Salt Identification Challenge [5]. From this challenge, we were able to download 4,000 image pairs where each pair consists of a 101x101 pixel seismic image of the earth’s subsurface, and its corresponding 101x101 pixel "salt mask", where white pixels represent the human interpretation of salt bodies. Here's a sample of the first 6 image pairs in the data set (Fig 4):
 
 ![example_data](example_data.png)
-**<center>Figure 4 Original training set image pairs (seismic image and mask)<br>** *Note: Salt is indicated by the white shading.*</center>*
+**<center>Figure 4 Original training set image pairs (seismic image and mask)<br>** *Note: Salt is indicated by the white shading.*</center>
 
 The images we have are simply cross-sectional slices of the 3D view obtained from reflection seismology as explained above. These images are stored in grayscale format, meaning each pixel has only one color value, between 0-255. This contrasts with a typical color image where each position contains 3 pixels for each RGB value. The “Salt-Mask” is created from an expert’s manual labeling which is considered the ground truth. Finally, on top of the images, we were also provided information on the depth of the imaged location.
 
@@ -102,9 +107,15 @@ Initially, this artificial data creation felt more like data wizardry than data 
 
 # 3. Common ML Image Tasks & Model Overview
 ## 3.1 Images and Machine Learning
+
 Before diving into what models are available and which one we chose to solve this problem, we think it’s helpful to examine at a high level, some of the common image related problems in the world of machine learning. The image below gives a great representation what four of the big tasks are trying to accomplish:
+
+<br>
+
 ![common_img_ml](common_img_ml.png)
+
 **<center>Figure 7. Image segmentation illustration</center>**
+
 
 * **Image Recognition**: First, there’s image recognition. Basically, you just want to predict what is in the image. This takes the mathematical form of estimating probabilities for each of the potential classes. 
 * **Object Detection**: The next logical step, after recognizing what the image contains is to actually identify where in the image, the detected objects are. This involves not only estimating probabilities for what an object may be, but actually predicting a bounding box that encloses the object. This is typically expressed as a regression task by predicting the coordinates of the pixel located at the center of the object and then predicting the object's width and height. When put together, these components represent the box containing the object.
