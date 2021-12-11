@@ -18,10 +18,12 @@ The current model we have developed is built on 4000 original input 2D salt imag
 ![Abstract Image](abstract_img.png)
 
 <br>
-Link to Implementation in notebook: [Notebook Github](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/code_team_contrasting_channel_final.ipynb)
+
+Link to Implementation in notebook: [https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/salt_segmentation_model_final.ipynb)
 
 
 <br>
+
 # 1. Statement of Purpose
 
 ## 1.1 Why are we interested in salt?
