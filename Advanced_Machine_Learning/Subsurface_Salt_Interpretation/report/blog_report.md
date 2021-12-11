@@ -7,9 +7,6 @@
 ## Team Members
 Brandt Green, Yi-Ting (Branda) Huang, Jessie Lee, Meha Mehta, Shengxiang Wu
 
-<img src="https://render.githubusercontent.com/render/math?math=RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1}">
-
-
 ## Abstract
 
 Accurately identifying subsurface salt deposits from seismic images is an important, yet time consuming step in the exploration and development of oil and gas resources in the energy industry. This process is undertaken in order to discover new resources and avoid hazards in certain basins globally. Each year, a large amount of employee hours are spent interpreting salt bodies in 3D seismic volumes. In this article we propose an alternative, machine learning driven approach to automating the process. 
@@ -59,6 +56,8 @@ How exactly are these seismic images obtained? Subsurface salt bodies are almost
 <br>
 
 The strength of seismic reflections at any boundary is defined by the equation [3,4]:
+
+<img src="https://render.githubusercontent.com/render/math?math=RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1}">
 
 $$ RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1} $$
 
@@ -231,6 +230,9 @@ For each iteration we specified training of 50 epochs, but included an early sto
 Before discussing the results of each model, we need to understand how the results are evaluated. The evaluation of semantic segmentation models necessitates the use of additional metrics to truly discern model performance. We used the following two metrics: pixel accuracy and IoU.
 
 **Pixel accuracy** is straightforward for anyone familiar with standard classification tasks. For each image, it is simply the percentage of correctly classified pixels:
+
+<img src="https://render.githubusercontent.com/render/math?math=Pixel\: Accuracy = \frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative}">
+
 $$Pixel\: Accuracy = \frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative}$$
 
 Then, we calculate the accuracy for the entire model as the mean accuracy of all images.
@@ -241,6 +243,7 @@ Then, we calculate the accuracy for the entire model as the mean accuracy of all
 **<center>Figure 11. IoU explanation</center>**
 
 The formula for calculating IOU is:
+<img src="https://render.githubusercontent.com/render/math?math=$$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$">
 $$IoU =  \frac{A \cap B}{A\cup B} = \frac{True Positive}{True Positive + False Positive + False Negative}$$
 
 ## 5.2 Results
@@ -301,6 +304,10 @@ Though U-net is seen as a more stable solution with proven success for this type
 
 ### Incorporate More Evaluation Metrics
 We can also include other common evaluation metrics [12] for semantic segmentation to get a more complete picture of the model performance. Dice Coefficient is another popular metric, similar to IoU with the main difference being that double weight is given to positive co-occurrences in the Dice Coefficient:
+
+<img src="https://render.githubusercontent.com/render/math?math=$$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
+$$IoU = \frac{Dice}{2-Dice}$$">
+
 $$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
 $$IoU = \frac{Dice}{2-Dice}$$
 More metrics will give us a richer view into our model’s strengths and weaknesses.
