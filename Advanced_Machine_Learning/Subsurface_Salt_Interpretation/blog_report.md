@@ -13,6 +13,26 @@ Meha Mehta
 Shengxiang Wu
 
 
+
+```
+# Number of inputs equals the number of pixels in our images * number of channels, which in this case is 1 because the images are greyscale.
+
+inputs = Input((IMG_WIDTH, IMG_HEIGHT, 1))
+ 
+# Layer to convert the pixels to 0-1 scales which is expected from later on layers
+s = Lambda(lambda img_pixels: img_pixels / 255) (inputs)
+
+
+c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (s)
+c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (c1)
+p1 = MaxPooling2D((2, 2)) (c1)
+
+c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (p1)
+c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (c2)
+p2 = MaxPooling2D(pool_size=(2, 2)) (c2)
+```
+
+
 ## Abstract
 
 Accurately identifying subsurface salt deposits from seismic images is an important, yet time consuming step in the exploration and development of oil and gas resources in the energy industry. This process is undertaken in order to discover new resources and avoid hazards in certain basins globally. Each year, a large amount of employee hours are spent interpreting salt bodies in 3D seismic volumes. In this article we propose an alternative, machine learning driven approach to automating the process. 
