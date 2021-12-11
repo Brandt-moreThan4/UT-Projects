@@ -137,7 +137,7 @@ Using an FCN seems appropriate for our challenge, but an FCN is actually just a 
 
 # 4. UNET Implementation
 ## 4.1 What is U-NET?
-U-Net, is a fully convolutional network architecture that was introduced in 2015 by three researchers at the University of Freiburg, Germany as they were working to develop a semantic segmentation model for microscopic cell images. The original architecture is displayed below (Fig. 8):
+U-Net, is a fully convolutional network architecture that was introduced in 2015 by three researchers at the University of Freiburg, Germany as they were working to develop a semantic segmentation model for microscopic cell images. The original architecture is displayed below (Fig. 8); [10]:
 
 ![U-Net Architecture](unet_architecture.png)
 **<center>Figure 8. Image segmentation illustration</center>**
