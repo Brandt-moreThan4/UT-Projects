@@ -29,7 +29,7 @@ The current model we have developed is built on 4000 original input 2D salt imag
 Link to Implementation in notebook: [Notebook Github](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/Subsurface_Salt_Interpretation/code_team_contrasting_channel_final.ipynb)
 
 
-<br><br
+<br>
 # 1. Statement of Purpose
 
 ## 1.1 Why are we interested in salt?
@@ -56,4 +56,51 @@ How exactly are these seismic images obtained? Subsurface salt bodies are almost
 **<center>Figure 2. Seismic Acquisition</center>**
 
 ![salt_body](salt_body.png)
-**<center>Figure 2. Seismic Data with Salt in Depth</center>**
+**<center>Figure 3. Seismic Data with Salt in Depth</center>**
+
+The strength of seismic reflections at any boundary is defined by the equation [3,4]:
+
+![sal_equation](sal_equation.png)
+
+Where RC is the reflection coefficient of compressional waves,  ρ2, v2  and ρ1, v1 are the density and travel velocity of compressional waves in overlain medium 2 and underlain medium 1 respectively. Due to the high velocity (V2) of compressional waves in salt (~4400 m/s) compared with surrounding sediment,  (ρ2v2 - ρ1v1) term is large resulting in strong positive inflection at top salt, where salt base is characterized by a strong negative reflection. 
+
+When human experts (geoscientists) examine the images, there are a few characteristics that help them identify the areas containing salt:
+1. Top of salt is normally a strong peak (a convoluted positive reflection), while the base is a strong trough (negative reflection).
+2. The interior of a salt body is relatively homogeneous and lacks layered structure as surrounding sediments. However, enclaves and impurities trapped inside salt could cause disturbances and the development of more complex texture.
+
+When salt - sediment boundary is close to vertical, sound waves coming from above would have incident angle semi-parallel to the boundary, resulting in refraction and diffraction of energy that causes complexity in imaging.
+When salt bodies are stacked, the energy of upper salts can attenuate (weaken) the seismic energy where the lower salt image can be blurred.
+ 
+In summary, the characters and features of salt in seismic images present several challenges for human experts, and we can expect some of these same challenges to cause trouble for our ML models. In this study, we are trying to leverage our domain knowledge and train the model purposefully to address the challenges while maximizing the distinguishing characters of salt bodies.
+
+
+# 2. Dataset
+## 2.1 Data Description
+The data for this project came straight from a Kaggle Competition: TGS Salt Identification Challenge [5]. From this challenge, we were able to download 4,000 image pairs where each pair consists of a 101x101 pixel seismic image of the earth’s subsurface, and its corresponding 101x101 pixel "salt mask", where white pixels represent the human interpretation of salt bodies. Here's a sample of the first 6 image pairs in the data set (Fig 4):
+
+![example_data](example_data.png)
+**<center>Figure 4 Original training set image pairs (seismic image and mask)<br>** *Note: Salt is indicated by the white shading.*</center>*
+
+The images we have are simply cross-sectional slices of the 3D view obtained from reflection seismology as explained above. These images are stored in grayscale format, meaning each pixel has only one color value, between 0-255. This contrasts with a typical color image where each position contains 3 pixels for each RGB value. The “Salt-Mask” is created from an expert’s manual labeling which is considered the ground truth. Finally, on top of the images, we were also provided information on the depth of the imaged location.
+
+
+## 2.2 Data Processing & Exploration
+### 
+
+### 2.2.2 Data Splitting
+### 2.2.3 Data Alchemy
+# 3. Common ML Image Tasks & Model Overview
+## 3.1 Images and Machine Learning
+## 3.2 Choosing a Model
+# 4. UNET Implementation
+## 4.1 What is U-NET?
+## 4.2 Base U-Net model Implementation:
+## 4.3 Enhancements on the Base Unet Model:
+# 5. Model Training and Results
+## 5.1 Metrics
+## 5.2 Results
+## 5.3 Model at Work
+# 6. Conclusion
+## 6.1 Key Takeaways
+## 6.2 Future work
+# 7. References
