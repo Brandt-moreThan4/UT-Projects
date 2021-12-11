@@ -85,22 +85,135 @@ The images we have are simply cross-sectional slices of the 3D view obtained fro
 
 
 ## 2.2 Data Processing & Exploration
-### 
+### 2.2.1 Depth
+
+As mentioned,depth information of the imaged salt bodies was provided. However, based on our domain knowledge of salt bodies in geoscience, the chance of salt occurrence is normally uncorrelated with the depth at which the body is located. To test this assertion, we conducted a brief exploratory analysis to see if we could identify any patterns that we were missing, but as you can see from the graphs below, depth really does not hold any value to this problem (Fig. 5).
+
+![depth](depth.png)
+
+**<center>Figure 5. The salt probability vs. depth (left: probability salt occurance of salt within each image vs. depth of the salt; right: probability of image with salt vs. without salt vs. depth)</center>**
+
 
 ### 2.2.2 Data Splitting
+
+After we downloaded the 4,000 image pairs from the Kaggle competition we took 3,500 of these pairs to be our training data and set aside 500 as our final validation set. The Kaggle competition creators also provided 18,000 images as their test set, but these were only provided for the competition evaluation purposes and thus did not have accompanying salt-masks, meaning they were of no use to us. 
+
 ### 2.2.3 Data Alchemy
+Obviously, for an image-related ML task, having only 3500 images to train a model hardly inspires much excitement. Fortunately, we stumbled upon a technique called Data Augmentation that allows you to synthetically increase the size of your training dataset. Data augmentation works by creating new data that are slightly modified, yet still realistic versions of the original dataset. With our particular dataset, we decided to apply three augmenting methods: Up-Down Flips, Left-Right Flips, and a 90 degree rotation. Each of these transformations was applied to every training set image, resulting in a revised training set sample size of 14,000 images. Examples of the transformations for 3 images are depicted below (Fig. 6):
+
+![augmentation](augmentation.png)
+**<center>Figure 6. Data Augmentation (Up-Down Flip, Left-Right Flip, 90 Degree Rotation)</center>**
+
+Initially, this artificial data creation felt more like data wizardry than data science, but after researching and experimenting more, we began to appreciate its utility. Data augmentation can be a powerful tool because it makes the model more robust by ensuring the model does not overfit to certain irrelevant positional characteristics.
+
 # 3. Common ML Image Tasks & Model Overview
 ## 3.1 Images and Machine Learning
+Before diving into what models are available and which one we chose to solve this problem, we think it’s helpful to examine at a high level, some of the common image related problems in the world of machine learning. The image below gives a great representation what four of the big tasks are trying to accomplish:
+![common_img_ml](common_img_ml.png)
+**<center>Figure 7. Image segmentation illustration</center>**
+
+* **Image Recognition**: First, there’s image recognition. Basically, you just want to predict what is in the image. This takes the mathematical form of estimating probabilities for each of the potential classes. 
+* **Object Detection**: The next logical step, after recognizing what the image contains is to actually identify where in the image, the detected objects are. This involves not only estimating probabilities for what an object may be, but actually predicting a bounding box that encloses the object. This is typically expressed as a regression task by predicting the coordinates of the pixel located at the center of the object and then predicting the object's width and height. When put together, these components represent the box containing the object.
+* **Semantic Segmentation**: Drawing a box around objects in the image is neat, but there are certain problems where a box may be too coarse and imprecise to truly address the task at hand. This is where semantic segmentation comes in. Semantic segmentation seeks to predict on a pixel by pixel basis the exact shape of the object. As can be seen in the image above, the pixels representing sheep are all identified as one class and the pixels corresponding to the dog are represented by the next class. This is exactly what our project entails, only instead of predicting the pixel masks for sheep and dogs, we’ll be outputting predicted probabilities for salt or not-salt.
+* **Instance Segmentation**: Finally, there is one additional extension for many projects that could be implemented. Semantic segmentation lumps all pixels corresponding to the same class into one chunk which is often fine, but in certain situations you may need the extra precision of actually identifying  that one blob of pixels representing “sheep” is different from the next blob of sheep pixels. When this distinction is necessary, the problem being solved is instance segmentation, but it is beyond the scope of our project because we do not need to distinguish between different clumps of salt in our images.
+
+
 ## 3.2 Choosing a Model
+We now have a pretty clear picture of our goal: solve a semantic segmentation problem where the input is a seismic image, and the output is also an image that highlights the sections of the input image containing salt. To accomplish this goal, we explored several models and our thought process followed like below.
+
+**Multi-Layer Perceptron (MLP)**: This is typically the “starter” model for anyone learning about neural networks and it would be quite a win if it also worked on image related problems. Unfortunately, there are two thorny problems with MLPs when applied to images. First, the number of trainable parameters in the model will explode when using anything other than a trivially small image. This issue arises because the input to the MLP model will be a flattened array of every pixel in the image, and with multiple fully connected layers, the parameter count rapidly grows unwieldy. Second, MLPs suffer from another related problem: overfitting the training data. MLPs are notoriously bad at understanding positional invariance, meaning they struggle to learn that the same object can appear in multiple different areas of the image. For example, if your model only contained training images where sheep were on the right hand side of the image, it would struggle to recognize a sheep on the left hand side of the image in the testing data. Clearly, MLPs are not going to work for our task.
+
+**Convolutional Neural Network (CNN)**: Fortunately, using a convolutional neural network solves many of the problems associated with MLPs. The two key components of CNNs, convolutional filters and pooling, work together to solve the problems of the MLP. A useful characteristic of the filters is that for each filter in a convolutional layer, all of the pixels share the same trainable parameters. This helps to reduce both the complexity by reducing the parameter count, and increases the models robustness to positional invariance because the same filter is applied to pixels in all positions of the image. The pooling layer also contributes to complexity reduction since the output shrinks the number of inputs fed to the next layer.These operations work together to help the model understand the “what” of the image which is necessary for a standard classification task, but the model as a whole tends to fall short when a probability prediction is needed for every single  input pixel provided. The cause of this deficiency is mainly due to the repeated application of max pooling layers because with each downsampling, some of the precise localized information is lost.On top of that, a CNN is typically topped off with a fully connected  dense layer which works well if you are predicting class probabilities, but not for predicting probabilities for each pixel. [6,7]
+
+**Fully Convolutional Network (FCN)**: Fully convolutional networks were introduced as an extension to CNNs with semantic segmentation tasks in mind. [8] The main addition of the fully convolutional neural network is that the final fully connected layer of a CNN is chopped off and instead replaced by another convolutional layer with one filter and one channel. By doing this, this output will be a 2D feature map of the exact same size as the original image and we can interpret the output numbers as class probabilities. An added benefit of removing the fully connected layer is that you can now send in images of multiple different sizes to the model because none of the layers require a specific input size. 
+
+Using an FCN seems appropriate for our challenge, but an FCN is actually just a general methodology that does not tell us how to specifically structure our model. Fortunately, we can build on the shoulders of the giants before us by taking an already successful FCN architecture off the rack. If you spend any time at all researching FCN semantic segmentation models, you will frequently encounter the popular U-NET architecture and this is the model we utilized.
+
 # 4. UNET Implementation
 ## 4.1 What is U-NET?
+U-Net, is a fully convolutional network architecture that was introduced in 2015 by three researchers at the University of Freiburg, Germany as they were working to develop a semantic segmentation model for microscopic cell images. The original architecture is displayed below (Fig. 8):
+
+![U-Net Architecture](unet_architecture.png)
+**<center>Figure 8. Image segmentation illustration</center>**
+
+You can see that the model is built with the same familiar building blocks found in a CNN: convolutional filters and max pooling. The big idea in U-Net is to supplement the traditional contracting path of a FCN with a mirror path containing upsampling operations instead of pooling.The downsampling path and upsampling path are called the “encoding” and “decoding” paths respectively and the sequence of these two mini-structures, when visualized like above, creates the U-like structure that U-Net gets its name from. The arrows in the above image indicate that the mirror layers for each path are concatenated together. A final point worth noting is that this model retains a large number of filters in the decoding phase, which allows the model to propagate big picture, context information to the later layers. [9,10]
+
+The reason this structure works so well for semantic segmentation tasks is because during the encoding step, the model is learning a lot of the big picture, macro information embedded in the image, and the decoding layers allow the model to retain the precise, localized information necessary to make fine-grained pixel predictions.
+
+
+
 ## 4.2 Base U-Net model Implementation:
+To implement the U-Net model, we utilized the Keras library in Python because of its intuitive, easy to understand API. The code we used to specify our model structure can be seen below (Fig. 9):
+
+``` Python
+# Number of inputs equals the number of pixels in our images * number of channels, which in this case is 1 because the images are greyscale.
+
+inputs = Input((IMG_WIDTH, IMG_HEIGHT, 1))
+ 
+# Layer to convert the pixels to 0-1 scales which is expected from later on layers
+s = Lambda(lambda img_pixels: img_pixels / 255) (inputs)
+
+
+c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (s)
+c1 = Conv2D(filters = 8, kernel_size=(3,3), activation='relu', padding='same') (c1)
+p1 = MaxPooling2D((2, 2)) (c1)
+
+c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (p1)
+c2 = Conv2D(filters = 16, kernel_size=(3,3), activation='relu', padding='same') (c2)
+p2 = MaxPooling2D(pool_size=(2, 2)) (c2)
+
+c3 = Conv2D(filters=32, kernel_size=(3,3), activation='relu', padding='same') (p2)
+c3 = Conv2D(filters=32, kernel_size=(3,3), activation='relu', padding='same') (c3)
+p3 = MaxPooling2D(pool_size=(2, 2)) (c3)
+
+c4 = Conv2D(filters=64, kernel_size=(3,3), activation='relu', padding='same') (p3)
+c4 = Conv2D(filters=64, kernel_size=(3,3), activation='relu', padding='same') (c4)
+p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+
+c5 = Conv2D(filters=128, kernel_size=(3,3), activation='relu', padding='same') (p4)
+c5 = Conv2D(filters=128, kernel_size=(3,3), activation='relu', padding='same') (c5)
+
+u6 = Conv2DTranspose(filters=64, kernel_size=(2,2), strides=(2, 2), padding='same') (c5)
+u6 = concatenate([u6, c4])
+c6 = Conv2D(filters=64, kernel_size=(3,3), activation='relu', padding='same') (u6)
+c6 = Conv2D(filters=64, kernel_size=(3,3), activation='relu', padding='same') (c6)
+
+u7 = Conv2DTranspose(filters=32, kernel_size=(2,2), strides=(2, 2), padding='same') (c6)
+u7 = concatenate([u7, c3])
+c7 = Conv2D(filters=32, kernel_size=(3,3), activation='relu', padding='same') (u7)
+c7 = Conv2D(filters=32, kernel_size=(3,3), activation='relu', padding='same') (c7)
+
+u8 = Conv2DTranspose(filters=16, kernel_size=(2,2), strides=(2, 2), padding='same') (c7)
+u8 = concatenate([u8, c2])
+c8 = Conv2D(filters=16, kernel_size=(3,3), activation='relu', padding='same') (u8)
+c8 = Conv2D(filters=16, kernel_size=(3,3), activation='relu', padding='same') (c8)
+
+u9 = Conv2DTranspose(filters=8, kernel_size=(2,2), strides=(2, 2), padding='same') (c8)
+u9 = concatenate([u9, c1], axis=3)
+c9 = Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same') (u9)
+c9 = Conv2D(filters=8, kernel_size=(3,3), activation='relu', padding='same') (c9)
+
+# Final output is sigmoid so that we get a probability for each pixel!
+outputs = Conv2D(filters=1, kernel_size=(1,1), activation='sigmoid') (c9)
+
+unet_model = Model(inputs=[inputs], outputs=[outputs])
+unet_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[mean_iou, 'accuracy'])
+```
+**<center>Figure 9. UNet workflow in Python</center>**
+
+
 ## 4.3 Enhancements on the Base Unet Model:
+
 # 5. Model Training and Results
 ## 5.1 Metrics
+
 ## 5.2 Results
+
 ## 5.3 Model at Work
+
 # 6. Conclusion
 ## 6.1 Key Takeaways
+
 ## 6.2 Future work
+
 # 7. References
