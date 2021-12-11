@@ -3,7 +3,6 @@
 
 
 
-
 ## Team Members
 Brandt Green, Yi-Ting (Branda) Huang, Jessie Lee, Meha Mehta, Shengxiang Wu
 
@@ -50,14 +49,15 @@ How exactly are these seismic images obtained? Subsurface salt bodies are almost
 ![air_guns](air_guns.png)
 **<center>Figure 2. Seismic Acquisition</center>**
 
-![salt_body](salt_body.png)
+<img src="salt_body.png" width="200">
+
 **<center>Figure 3. Seismic Data with Salt in Depth</center>**
 
 <br>
 
 The strength of seismic reflections at any boundary is defined by the equation [3,4]:
 
-<img src="https://render.githubusercontent.com/render/math?math=RC = \frac{p_2V_2 - p_1V_1}{p_2V_2 + p_1V_1}">
+<img src="equation.png">
 
 Where RC is the reflection coefficient of compressional waves,  ρ2, v2  and ρ1, v1 are the density and travel velocity of compressional waves in overlain medium 2 and underlain medium 1 respectively. Due to the high velocity (V2) of compressional waves in salt (~4400 m/s) compared with surrounding sediment,  (ρ2v2 - ρ1v1) term is large resulting in strong positive inflection at top salt, where salt base is characterized by a strong negative reflection. 
 
@@ -265,7 +265,7 @@ Below you can see the performance of our best model throughout the training proc
 
 
 ## 5.3 Model at Work
-To visualize how the model does in predicting salt, we used 2 outputs and compared it with ‘true’ salt body interpreted by human interpreters (Fig. 13). It’s also with noting that since the original mask were created from a connected 3D volume, all human interpretations were performed with a context of nearby cells, which is not available for our model training, where all input images are small local images. 
+To visualize how the model does in predicting salt, we used 2 outputs and compared it with ‘true’ salt body interpreted by human interpreters (Fig. 13). It’s also worth noting that since the original masks were created from a connected 3D volume, all human interpretations were performed with a context of nearby cells, that is not available for our model training, where all input images are small local images with unknown surroundings beyond the image. 
 
 As we can see, except for local disturbance that was ambiguous even for the human eye, i.e., bottom left corner for the upper image (Fig 13), most of the interpretations are impressively accurate. 
 
