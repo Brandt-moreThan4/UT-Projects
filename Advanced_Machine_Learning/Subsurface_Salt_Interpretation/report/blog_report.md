@@ -113,8 +113,9 @@ Before diving into what models are available and which one we chose to solve thi
 <br>
 
 ![common_img_ml](common_img_ml.png)
-
 **<center>Figure 7. Image segmentation illustration</center>**
+
+<br>
 
 
 * **Image Recognition**: First, there’s image recognition. Basically, you just want to predict what is in the image. This takes the mathematical form of estimating probabilities for each of the potential classes. 
@@ -257,7 +258,10 @@ You can see the best results were obtained when we used all three data augmentat
 Below you can see the performance of our best model throughout the training process (Fig. 12). Both of our evaluation metrics appear to plateau after about 7-8 epochs.
 
 ![accuracy](accuracy.png)
-![val_iou](iou.png)
+
+<br>
+
+![val_iou](val_iou.png)
 **<center>Figure 12. Comparison of training IoU evolution with epoch (upper: training set IoU; lower: validation set IoU)</center>**
 
 
@@ -279,27 +283,29 @@ From the results, the solution that has the highest accuracy score of 93.4% and 
 ## 6.2 Future work
 
 There’s still so much that can be done with this project. The following is a short list of potential ideas and next steps we would like to explore to escalate our solution to the next level:
-Increasing Training Dataset Size
+
+### Increasing Training Dataset Size
 To better train the model with more variations of textures and characteristics, more input images and masks would benefit. Increasing the training set would potentially capture not only the morphologic and textural variation caused by location of salt such as salt from North Sea and West Africa, it could also train the model to interpret seismic frequency, angle stack and any other pre- and post-stack processing related variations.  
 There are many existing salt interpretation products in the industry, and only making a small fraction of them available to train the model would have a high potential of improving the model. 
 In the ideal application, we always want to create a global training set while adding additional training data for specific local applications using the corresponding local salt image data.
-More Data Augmentation
+
+### More Data Augmentation
 What if more training data is limited or not available? We achieved reasonable model improvement with the image augmentations that we applied and because of this success we think it’s worth further investigating the power and limits of this technique. Would our model perform even better if we added in more image alterations? Should we add 180 degree rotations? Image blurs? Elastic deformations? Which alterations work best for our data set? How many alterations are too many? Certainly an intriguing topic to dig into.
 
-Pseudo Labeling
+### Pseudo Labeling
 Pseudo-labeling is a simple semi-supervised learning algorithm which attempts to incorporate unlabeled data into the model training process. The model does this by using a partially trained model to predict the unlabeled data, and then feeds this prediction back to the model for more training! This is another one of those techniques that at first pass, seems a bit like data wizardry, but as we mentioned previously, we have 18,000 unlabeled images and we would love to find a way to use this untapped data. For further explanation and sample code, see reference [11]: 
 
-Different Segmentation Models
+### Different Segmentation Models
 Though U-net is seen as a more stable solution with proven success for this type of semantic segmentation problem, there are several extensions to U-net that should be considered (eg: ResNet-Unet) along with other architectures (eg: MaskRCNN, FPN) that if implemented, could provide performance improvements. 
 
-Incorporate More Evaluation Metrics
+### Incorporate More Evaluation Metrics
 We can also include other common evaluation metrics [12] for semantic segmentation to get a more complete picture of the model performance. Dice Coefficient is another popular metric, similar to IoU with the main difference being that double weight is given to positive co-occurrences in the Dice Coefficient:
 $$Dice = 2*\frac{A \cap B}{A\cup B} = \frac{2*True Positive}{2*True Positive + False Positive + False Negative}$$
 $$IoU = \frac{Dice}{2-Dice}$$
 More metrics will give us a richer view into our model’s strengths and weaknesses.
 
-Transfer Learning
-Transfer learning involves using a model that has been pre-trained for another task, slightly modifying the model as needed and then applying it to your project specifications. There’s been a lot of success with this approach and we think it’s worth exploring. The reason for our lack of faith is because the vast majority of open source pre-trained models are trained on data sets that are drastically different from the seismic imaging data we have. Most are trained on ImageNet [xx] which consists largely of everyday sights and objects such as trees,people, and cars. That being said, we still think it’s worth trying due to the large success we’ve seen others have using this approach.
+### Transfer Learning
+Transfer learning involves using a model that has been pre-trained for another task, slightly modifying the model as needed and then applying it to your project specifications. There’s been a lot of success with this approach and we think it’s worth exploring. The reason for our lack of faith is because the vast majority of open source pre-trained models are trained on data sets that are drastically different from the seismic imaging data we have. Most are trained on ImageNet which consists largely of everyday sights and objects such as trees,people, and cars. That being said, we still think it’s worth trying due to the large success we’ve seen others have using this approach.
 
 
 ## Concluding Thoughts
@@ -325,3 +331,6 @@ Seismic Imaging and salt identification play an important role in oil and gas di
 [10] https://arxiv.org/pdf/1505.04597.pdf <br>
 [11] https://towardsdatascience.com/pseudo-labeling-to-deal-with-small-datasets-what-why-how-fd6f903213af <br>
 [12] https://towardsdatascience.com/metrics-to-evaluate-your-semantic-segmentation-model-6bcb99639aa2
+<br>
+[13] https://www.youtube.com/watch?v=azM57JuQpQI <br>
+[14] https://www.tensorflow.org/tutorials/images/segmentation
