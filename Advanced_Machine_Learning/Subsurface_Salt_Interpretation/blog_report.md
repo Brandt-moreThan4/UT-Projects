@@ -14,7 +14,7 @@ Shengxiang Wu
 
 
 
-```
+``` python
 # Number of inputs equals the number of pixels in our images * number of channels, which in this case is 1 because the images are greyscale.
 
 inputs = Input((IMG_WIDTH, IMG_HEIGHT, 1))
