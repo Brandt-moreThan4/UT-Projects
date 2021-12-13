@@ -2,9 +2,6 @@
 
 ## Group Members: Aditya Soni, Brandt Green, Bret Jaco, Emilio Cabrera
 
-### Link to Rmd File:
-
-[Project_Rmd_File](https://github.com/Brandt-moreThan4/Machine-Learning/blob/main/STA%20380%20Part%202%20Exercises_Combined.Rmd)
 
    
 
