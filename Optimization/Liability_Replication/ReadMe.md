@@ -1,4 +1,4 @@
-# Creating A Liability-Replicating Portfolio
+# NASDAQ Replication
 
 **Link to Code: [Notebook](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Optimization/Liability_Replication/Project_1_Final.ipynb)**
 
