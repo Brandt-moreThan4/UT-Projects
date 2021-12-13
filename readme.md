@@ -2,14 +2,20 @@
 
 For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs.utexas.edu/Master-of-Science-in-Business-Analytics/Academics/Curriculum).
 
-*Note: I'm still working on providing appropriate descriptions for all of the projects displayed, but for the most part, if a project link does not have a readme associated with it, then the notebook file likely has sufficient enough explanations within to understand the project.*
+*Note: I'm still working on providing appropriate descriptions for all of the projects displayed. For now, many of the projects just provide links to the directions and then a link to the notebook with the code. At some point I will go through and make sure all of the README files have more in depth descriptions of the work done.*
 
 ## Courses
 
-### Finance:
-* S&P 500 Index Replication
-* Small Cap Value Funds and the Size Effect
-* Yield Curve Inversions
+### [Finance](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance)
+* [Automated_Betas_from_Comps](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Automated_Betas_from_Comps)
+* [Index_Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Index_Replication)
+* [R_and_D_Firm_Returns](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/R_and_D_Firm_Returns))
+* [Security_Market_Line](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Security_Market_Line)
+* [Simulated_Portfolios](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Simulated_Portfolios)
+* [Small_Cap-Size_Effect](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Small_Cap-Size_Effect)
+* [Stock_Splits](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Stock_Splits)
+* [Yield_Curve_Inversions](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Yield_Curve_Inversions)
+
 
 ### [Optimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization) 
 * [Liability-Matching Optimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Liability_Replication)
