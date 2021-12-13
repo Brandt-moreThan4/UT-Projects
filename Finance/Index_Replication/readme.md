@@ -1,5 +1,7 @@
 # An attempt to replicate the S&P 500 Index from 2010/12/31-2020/12/31
 
+*Link to code:* [Notebook](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Finance/Index_Replication/hw1_SP_500-final.ipynb) 
+
 ### Assumptions:
 * No market frictions (i.e. transaction costs,spreads) 
 * Rebalanced quarterly 

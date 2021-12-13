@@ -9,7 +9,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 ### [Finance](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance)
 * [Automated_Betas_from_Comps](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Automated_Betas_from_Comps)
 * [Index_Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Index_Replication)
-* [R_and_D_Firm_Returns](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/R_and_D_Firm_Returns))
+* [R_and_D_Firm_Returns](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/R_and_D_Firm_Returns)
 * [Security_Market_Line](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Security_Market_Line)
 * [Simulated_Portfolios](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Simulated_Portfolios)
 * [Small_Cap-Size_Effect](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Small_Cap-Size_Effect)
