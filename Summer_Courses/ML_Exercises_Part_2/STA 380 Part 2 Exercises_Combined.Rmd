@@ -1,0 +1,1230 @@
+---
+title: 'STA 380, Part 2: Exercises'
+author: "Aditya Soni, Brandt Green, Bret Jaco, Emilio Cabrera"
+date: "8/16/2021"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+# STA 380, Part 2: Exercises
+## Group Members: Aditya Soni, Brandt Green, Bret Jaco, Emilio Cabrera
+
+### Link to Rmd File:
+[Project_Rmd_File](https://github.com/Brandt-moreThan4/Machine-Learning/blob/main/STA%20380%20Part%202%20Exercises_Combined.Rmd)
+
+```{r, include=FALSE}
+#NOTE!! This whole file will probably take a few minutes to run because of the simulations and cross validations done in certain problems.
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message = FALSE, warning = FALSE)
+```
+
+
+
+```{r, include=FALSE}
+# Load libraries
+set.seed(42)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggcorrplot)
+library(moments)
+
+library(mosaic)
+library(quantmod)
+library(foreach)
+library(LICORS) 
+library(arules)
+library(gridExtra)
+
+library(tm) 
+library(slam)
+library(proxy)
+library(magrittr)
+library(Rcpp)
+library(formattable)
+
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+\  
+\  
+
+# Green Buildings
+While the stats guru's analysis provided a good baseline for thinking about the issue, we believe his methodology fell short in several areas, particularly when it comes to understanding the potential for confounding variables.
+
+After examining the data, we do not feel that there is sufficient evidence, on a monetary basis, to justify the additional investment necessary to construct the building in line with green certification standards.
+```{r, include=FALSE}
+
+# Read in the data
+greenbuildings <- read_csv("greenbuildings.csv")
+greenbuildings = greenbuildings %>% select(-CS_PropertyID,-cluster) # Get rid of useless columns
+
+# Convert categorical to factors and change binaries into 'Yes' and 'No'
+data_plotting = greenbuildings
+
+for (col_name in colnames(data_plotting)) {
+  data = data_plotting[[col_name]]
+  uniques = length(unique(data))
+  if ( uniques <=2) {
+    data = ifelse(data == 1,'Yes','No')
+    data_plotting[[col_name]] <- factor(data)
+  }
+}
+
+
+
+```
+
+## Data Cleaning
+First, we can address the data cleaning aspect of the analysis. Are there any adjustments that should be made to the raw data set? The excel guru certainly felt that a certain amount of scrubbing should take place. He decided that because some of the buildings had low occupancy rates they should be excluded from the analysis due to their "weirdness". To explore the validity of this scrubbing we examined the data points that the guru proposed be removed. We manually inspect these observations and we do not find any other "weirdness" associated with these points that would indicate they should be removed. There are 215 data points with leasing rates less than 10 or 2.7% of the original data set. Without finding any reasonable justification, we decide not to remove these observations as we feel our bias should be towards data preservation.
+
+```{r,include=FALSE}
+# We want to understand what's going on with those data points he's scrubbing.
+
+low_occupany = greenbuildings %>% filter(leasing_rate < 10)
+other = greenbuildings %>% filter(leasing_rate >= 10)
+
+# Compare the the data
+summary(greenbuildings)
+summary(low_occupany)
+
+dim(low_occupany)
+
+```
+
+## Mean vs Median: Who's in Charge?
+*Note: For the purposes of presentation clarity, we have converted all categorical, binary variables from "1", "0" to "Yes","No".*
+
+The guru decided to use the median, over the mean in his analysis and we feel this approach is justified. Support for this position can be seen in the below histogram which depicts the distribution of rents. The rents are clearly right skewed, with a few points that lie far into the right tail. The vertical, blue line indicates the median value, and the vertical red line indicates the mean. We maintain that the appropriate statistic for our purposes is the median, unless there is some justification or reasoning that would indicate that this newly constructed building will be out of the ordinary. From here on, we will confine the majority of our analysis to looking at the median.
+
+```{r}
+hist(greenbuildings$Rent, breaks = 50,xlab='Rent',main='Histogram of Rent')
+rent_median = median(greenbuildings$Rent)
+rent_mean = mean(greenbuildings$Rent)
+rent_skew = skewness(greenbuildings$Rent)
+abline(v=rent_median,lwd=2,col='blue')
+abline(v=rent_mean,lwd=2,col='red')
+text(100,1000, 'Mean = 28.42 \n Median = 25.16 \n Skew = 3.49')
+
+```
+
+## Big Picture: Green vs Non-Green
+Now, as a starting point we can compare the median rent for green buildings vs non-green buildings, just as the guru did. 
+
+```{r}
+
+data_plotting %>% group_by(green_rating) %>%  summarise(Median_Rent = median(Rent)) %>% ggplot(aes(x=green_rating,y=Median_Rent,fill=green_rating)) +
+  geom_col() + geom_text(aes(label=Median_Rent),vjust=1.5,color='white') + labs(title = 'Median Rent by Greeness') + coord_cartesian(ylim=c(0,30)) + scale_y_continuous(breaks=seq(0,30,5))
+
+
+```
+
+The median rent is certainly larger for green buildings vs non green buildings: \$27.60 per square foot for green buildings vs \$25.00 for non-green buildings. But this doesn't really tell the full story. It is too much a leap of faith to claim that this rental difference is due solely to the building's green rating. We need to dig deeper to understand the data further and perhaps discover that the higher median rent differential could be attributed to another variable or factor.
+
+
+## Confounders
+
+We need to do some basic exploration of our data set beyond what we have already done with the goal of understanding how a building's green rating is related to both rent and other variables. One might hypothesize that green buildings are simply associated with other factors, which are really driving the difference in the median rental value. "Going Green" is a newer phenomenon so we might expect that the majority of buildings that have green certifications are newer buildings and that this newness is what drives their rent higher. Perhaps buildings that are built with green certification standard in mind are also built with higher quality overall and that this higher quality, indicated  by building class, is what is truly determining rent dispersion. We must examine the data for the possibility of these confounders.
+
+To get a feel for the potential interactions between variables in the data, we plot a correlation matrix.
+
+```{r}
+
+
+data_no_nas = na.omit(greenbuildings) # remove na's from employment
+# data_no_employ = greenbuildings %>% select(-empl_gr)
+# ggcorrplot(cor(data_no_employ), hc.order = TRUE, outline.color = "white")
+
+corry_matrix = cor(data_no_nas)
+ggcorrplot(corry_matrix, hc.order = TRUE, outline.color = "white") + labs(title='Correlation Matrix')
+
+
+```
+
+There are lots of interesting relationships displayed here, but we would like to focus on a few that provide interesting information to the question at hand and allow us to test our hypothesized confounders: Age and Building Class.  
+
+
+### Age
+First, examining the distribution of Age by green and non-green buildings, it is clear that green buildings do tend to be younger. 
+
+```{r}
+ggplot(data_plotting) + geom_boxplot(aes(x=green_rating,y=age, fill=green_rating)) + labs(title = 'Age Distribution by Greenness')
+
+```
+
+We know that green buildings tend to be younger, but do younger buildings command a rent premium? To uncover a potential relationship here we create a new variable 'younger' that indicates if the building is below the median age of all buildings in our data set. This will allow us to analyze the rent between young and old buildings:
+
+```{r}
+med_age = median(data_plotting$age)
+data_plotting <- data_plotting %>% mutate(younger = ifelse(age <= med_age,'Yes','No'))
+# data_plotting$newer = factor(data_plotting$younger)
+
+data_plotting %>% group_by(younger) %>%  summarise(Median_Rent = median(Rent)) %>% ggplot() +
+  geom_col(aes(x=younger,y=Median_Rent,fill=younger)) + labs(title = 'Median Rent by Age') + coord_cartesian(ylim=c(0,30)) + scale_y_continuous(breaks=seq(0,30,5))
+
+```
+
+We can see that younger buildings do have a higher median rent than older buildings. This should cast some doubt on the case for the green premium. We know green buildings tend to be younger and we know younger buildings tend to have a higher rent. How can we untangle this!?
+
+
+We'll dig further by breaking down median rent by both green rating and age:
+
+```{r}
+data_plotting %>% group_by(green_rating,younger) %>%  summarise(Median_Rent = median(Rent), count = n()) %>% ggplot(aes(x=younger,y=Median_Rent,fill=green_rating)) + geom_col(position = 'dodge',color='black') + labs(title = 'Median Rent by Age & Greenness') + scale_y_continuous(breaks=seq(0,30,5))
+```
+
+Interesting results. In both younger and older buildings, those that are green have a higher median rent than those that are not green. This lends a bit of credence to the green premium. 
+
+One intriguing point is that green buildings command a much higher premium in older buildings. For our purposes of determining the premium for the newly constructed building; however, the median rent differential among younger buildings is more relevant. In this category the premium is much smaller and we do not feel as confident in claiming the premium is significant and not due to chance or other confounders.
+
+
+### Class
+What about class? We hypothesized that perhaps green buildings just happen to be built of a higher quality and thus higher class. We can see the evidence of this in the below plot. The majority of green buildings are also class A buildings.
+
+```{r}
+green_only = data_plotting %>% filter(green_rating == "Yes")
+
+ggplot(data=green_only, aes(x=class_a, fill=class_a)) + geom_bar(color='black') + labs(title = 'Count of Class A within Greenness')
+
+```
+
+Now we show a breakdown similar to Age, that allows us to control for being a class A building and examine the median rent of green vs non-green.
+
+```{r}
+data_plotting %>% group_by(green_rating,class_a) %>%  summarise(Median_Rent = median(Rent), count = n()) %>% ggplot(aes(x=class_a,y=Median_Rent, fill=green_rating)) + geom_col(position = 'dodge',color='black') + labs(title = 'Median Rent by Class A & Greenness')  + scale_y_continuous(breaks=seq(0,30,5))
+
+
+```
+
+Class A is the winner in terms of rent, which does not come as a large surprise; we expect higher quality buildings to rent for more. There does appear to be a small advantage within each category for green buildings, but the dominant driver of rent here is the class. 
+
+## Neighbor Rent
+
+We also decided to investigate the relationship between the rent of other buildings in the local area with the rent of a particular building. Our correlation matrix gave us a strong positive association and we are always told that location is paramount when it comes to real estate. Below, you can see the Cluster Rent, Rent pairs plotted along with a fitted, single-predictor, regression line. The association between local building rents and rent appears to be strong indeed although the variance does increase as the cluster rent increases.
+
+```{r}
+
+ggplot(data_plotting,aes(x=cluster_rent,y=Rent)) + geom_point() + stat_smooth(method=lm,level=.95) + labs(title = 'Positive Association Between Rent of Cluster and Rent')
+
+```
+
+
+## Regression Model
+As a final check on the analysis done so far, we run a multi-variable regression model with all of our independent variables. Our primary goal with this model is to validate and check the conclusions we have already made and ground our analysis with some numerical precision. The summary is depicted below: 
+
+
+```{r}
+
+model_data = greenbuildings %>% select(-total_dd_07) # Remove total because it is just a combination of two other vars.
+# model_data = greenbuildings %>% select(-cd_total_07,-hd_total07)
+lm_model = lm(Rent~.,data=model_data)
+summary(lm_model)
+
+
+```
+
+Key takeaways from the model output. Age has a negative coefficient, class_a has a positive coefficient, and cluster rent has a positive coefficient. These match up with our previous analysis. Additionally, green_rating has a slightly positive coefficient of .5, but it is not statistically significant at the .05 level meaning that when we control for all other factors in the data, the positive impact of green rating does not exhibit strong enough evidence that it truly exists. Another factor worth considering is that that the Energy Star coefficient is actually negative. This is interesting because if the developer does decide to pursue a green certification, they would need to decide if they should get one or both certifications. Though it is not statistically significant, we suggest they prioritize compliance with the LEED standard. 
+
+## Conclusion 
+
+Our final recommendation is: based on the data currently available, we do not recommend the developer should invest in the construction necessary to achieve a green certification. The data does not provide strong enough evidence to indicate that the green premium exists. The $5 million dollars could be more appropriately invested elsewhere.
+
+
+\  
+\  
+\  
+\    
+\  
+
+# Flights at ABIA
+```{r}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+
+df = read.csv("ABIA.csv")
+
+#replace NAs with 0
+df[is.na(df)] = 0
+
+###  New Variable that accounts for ALL delays for a given flight
+df$AVG_Delay = (df$ArrDelay + 
+                  df$DepDelay + 
+                  df$CarrierDelay + 
+                  df$WeatherDelay + 
+                  df$NASDelay + 
+                  df$SecurityDelay + 
+                  df$LateAircraftDelay)/7
+
+### Description of delays in minutes
+# ArrDelay arrival delay, in minutes
+# DepDelay departure delay, in minutes
+# CarrierDelay in minutes
+# WeatherDelay in minutes
+# NASDelay in minutes
+# SecurityDelay in minutes
+# LateAircraftDelay in minutes
+```
+
+## Time Series
+
+A key component when traveling via flight surrounds **time delays**. Our time series analysis is composed of annual, weekday and day of month analyses for flight time delays to/out of Austin-Bergstrom International Airport. The first plots are made to provide insight on minimizing delays when booking flights across a given point in time. The second figures are made to provide insight on minimizing time delays among the top  four airline carriers.
+
+
+### 1) When is the worst of time of the year for experiencing delays when flying to/out of Austin-Bergstrom International Airport?
+
+```{r}
+#Calculate the average delay per year
+Monthly = df %>%
+  group_by(Month) %>%
+  summarise_at(vars(AVG_Delay), list(name = mean))
+
+#round values
+Monthly$name = round( Monthly$name, 2)
+
+#plot by month
+ggplot(data=Monthly, aes(x=Month, y=name)) +
+  geom_bar(stat="identity", fill="steelblue") +
+  geom_text(aes(label=name), vjust=1.6, color="white", size=3.5) +
+  theme_minimal() + 
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="steelblue", size=14, face="bold"),
+         axis.title.x = element_text(color="steelblue", size=14, face="bold"))+
+  scale_x_discrete(limits=c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec') )
+```
+
+#### 1) Interpretation  
+
+The graph above depicts the average delay time by month for 2008. From the graph one can see that the highest delays occurred during the months of December, March, and June. The lowest delays occurred  during the months of September, October, and November. It is understandable that the month of December experiences delays as there are several holidays that fall during the month and one can expect weather delays. March and June are months when students/adults take Spring and Summer break respectively, so the amount of delays are expected to be longer due to overall volume of travelers. The months that experience the least amount of time delays was surprising as the delays were almost a third of overall delays experienced in other months. 
+
+### 2) When is the worst day of the week for experiencing delays when flying to/out of Austin-Bergstrom International Airport?
+
+```{r}
+#Calculate the average delay per week day
+Daily = df %>%
+  group_by(DayOfWeek) %>%
+  summarise_at(vars(AVG_Delay), list(name = mean))
+
+#round values
+Daily$name = round( Daily$name, 2) 
+
+# plot by week day
+ggplot(data=Daily, aes(x=DayOfWeek, y=name)) +
+  geom_bar(stat="identity", fill="darkred") +
+  geom_text(aes(label=name), vjust=1.6, color="white", size=3.5)+
+  theme_minimal()+ 
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="darkred", size=14, face="bold"),
+         axis.title.x = element_text(color="darkred", size=14, face="bold"))+
+  scale_x_discrete(limits=c('M', 'T', 'W', 'TR', 'F', 'SA', 'SU') )
+```
+
+#### 2) Interpretation
+
+The graph above depicts the average delay time by week day for 2008. From the graph one can see that the highest delays occurred Friday and Sunday. The lowest delays occurred during Wednesday and Saturday. Friday marks the end of a business week while Sunday marks the end to a full week, so it is understandable as to why there are longer delays on these days. Wednesday can  be expected to be slow as it is the middle of a work-week and most people are stationary through the intra-week. One may find it interesting that Saturday was the second day of the week that experiences the least amount of time delays as it is not a work/business day. One interpretation could be that most individuals traveling are already at their destination by Friday or Sunday. 
+
+### 3) When is the worst of the month for experiencing delays when flying to/out of Austin-Bergstrom International Airport?
+
+```{r}
+#Calculate the average delay per day of month
+Weekly = df %>%
+  group_by(DayofMonth) %>%
+  summarise_at(vars(AVG_Delay), list(name = mean))
+
+#round values
+Weekly$name = round( Weekly$name, 0)
+
+# plot by weekly
+ggplot(data=Weekly, aes(x=DayofMonth, y=name)) +
+  geom_bar(stat="identity", fill="darkgreen") +
+  geom_text(aes(label=name), vjust=1.6, color="white", size=3.5)+
+  theme_minimal()+ 
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="darkgreen", size=14, face="bold"),
+         axis.title.x = element_text(color="darkgreen", size=14, face="bold"))
+```
+
+#### 3) Interpretation
+
+The graph above depicts the average delay time by day of the month for 2008. From the graph one can see that the highest delays occurred in the middle and towards the end of the month (day 10+). The lowest time delays occurred during the beginning of the month (days <10). One interpretation could be that most working individuals reserve their personal time off in case of emergency until the end of the month where they then can utilize those unused PTO days for travel, thus affecting volume/overall delays. 
+
+
+### 4) Airline Carriers
+
+We wanted to take this time series analysis to the next step by potentially investigating delays in *Destinations* or *Carrier*. First we decided which factor to analyze.
+
+Destinations:
+
+```{r}
+# now take a look at certain destinations / Carriers that may cause delays
+table(df$Dest)
+```
+Carriers:
+
+```{r}
+table(df$UniqueCarrier)
+```
+
+
+Based off intuition and value counts we moved further by analyzing the main airline carriers:
+  
+- value counts: there were too many unique values and more of a variation for flight destinations, while only a handful of airline carriers
+- intuition: the destination of flight is usually final (i.e. you are going to see your family in New York for the holidays), which airline carrier selected is less final (you have the option to choose the airline)
+
+Our team personally researched the airline codes and selected what we deemed as the most popular airlines and had the most flights out of ABIA:
+
+-  AA: American Airlines
+-  DL: Delta Airlines
+-  CO: Continental Airlines
+-  WN: Southwest Airlines
+
+```{r}
+#create new dataset
+top = c('AA','DL','CO','WN')
+
+Airlines = df[df$UniqueCarrier == top, ]
+
+#### Description of delays in minutes
+# ArrDelay arrival delay, in minutes
+# DepDelay departure delay, in minutes
+# CarrierDelay in minutes
+# WeatherDelay in minutes
+# LateAircraftDelay in minutes
+
+#### Excluded the following as they are our of the airlines controls
+# NASDelay in minutes
+# SecurityDelay in minutes
+
+# New Variable that accounts for multiple delays for a given flight
+Airlines$Delay = (Airlines$ArrDelay + 
+                    Airlines$DepDelay + 
+                    Airlines$CarrierDelay + 
+                    Airlines$WeatherDelay + 
+                    Airlines$LateAircraftDelay)/5
+
+# Calculate the average delay per year
+X = Airlines %>%
+  group_by(Month,UniqueCarrier ) %>%
+  summarise_at(vars(Delay), list(name = mean))
+
+#plot by month
+X1 =ggplot(data=X, aes(fill= UniqueCarrier , x=Month, y=name)) +
+  geom_bar(position = 'stack', stat="identity") +
+  theme_minimal() +
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="black", size=14, face="bold"),
+         axis.title.x = element_text(color="black", size=14, face="bold"))+
+  scale_x_discrete(limits=c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec') )
+
+X2 =ggplot(data=X, aes(fill= UniqueCarrier , x=Month, y=name)) +
+  geom_bar(position = 'dodge', stat="identity") +
+  theme_minimal() +
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="black", size=14, face="bold"),
+         axis.title.x = element_text(color="black", size=14, face="bold"))+
+  scale_x_discrete(limits=c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec') )
+
+# Calculate the average delay per week day
+Y = Airlines %>%
+  group_by(DayOfWeek,UniqueCarrier ) %>%
+  summarise_at(vars(Delay), list(name = mean))
+
+# plot by week day
+Y1 =ggplot(data=Y, aes(fill= UniqueCarrier , x=DayOfWeek, y=name)) +
+  geom_bar(position = 'stack', stat="identity") +
+  theme_minimal() +
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="black", size=14, face="bold"),
+         axis.title.x = element_text(color="black", size=14, face="bold"))+
+  scale_x_discrete(limits=c('M', 'T', 'W', 'TR', 'F', 'SA', 'SU') )
+
+Y2 =ggplot(data=Y, aes(fill= UniqueCarrier , x=DayOfWeek, y=name)) +
+  geom_bar(position = 'dodge', stat="identity") +
+  theme_minimal() +
+  ylab("Avg. Delay (Min)") +
+  theme( axis.title.y = element_text(color="black", size=14, face="bold"),
+         axis.title.x = element_text(color="black", size=14, face="bold"))+
+  scale_x_discrete(limits=c('M', 'T', 'W', 'TR', 'F', 'SA', 'SU') )
+
+```
+
+```{r}
+grid.arrange(X1, Y1, nrow = 2)
+```
+
+```{r}
+grid.arrange(X2, Y2, nrow = 2)
+```
+
+### 4) Interpretation 
+
+The graphs above depict the average delay time by month & week-day for 2008 grouped by Airline Carrier. From the graphs one can see that the highest time delays occurred on Delta Airlines...all that money for a ticket and yet the longest delays! The shortest delays occurred on both Southwest and American Airlines respectively. Continental airlines was on the longer end of time delays, but not nearly as much as Delta. 
+
+## Conclusion
+
+Overall based off of the 2008 ABIA flight data, we found that the best time of the year to travel with shortest time delays is on the first or second Saturday of September. Furthermore, we found that the best Airline Carrier for the shortest time delay was Southwest Airlines.
+
+
+
+
+
+
+
+
+
+
+\  
+\  
+\  
+\    
+\  
+
+
+
+
+
+
+
+# Portfolio modeling
+
+We are using 8 ETFs as a our feasible set for portfolio construction:
+
+
+* US Equities:
+  + ARK: ARK Innovation ETF.
+  + SDY: S&P 500 High Yield Dividend Aristocrats
+  + XLF: Diversified, financial equities
+* Fixed Income:
+  + GOT: US Treasuries
+  + HYG: US high yield, liquid, corporate bonds
+* Foreign Equities:
+  + EWJ: Large cap Japanese Stocks
+  + MCHI: Chinese Equity Market
+* Commodity
+  + BNO: Brent Crude Oil
+
+```{r, include=FALSE}
+# Load data from web
+
+
+# Get ETs
+my_etfs = c("ARKK", "SDY", "GOVT",'BNO','EWJ','XLF','MCHI','HYG')
+etf_count = length(my_etfs) # Need this later
+
+# 5 years of data
+getSymbols(my_etfs,from='2016-8-1')
+
+
+# We want to look at adjusted values only
+for(ticker in my_etfs) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+my_etfs_adjusted = paste(my_etfs,'a',sep = '')
+
+all_returns = cbind( ClCl(ARKKa),
+                     ClCl(SDYa),
+                     ClCl(XLFa),
+                     ClCl(GOVTa),
+                     ClCl(HYGa),
+                     ClCl(EWJa),
+                     ClCl(MCHIa),
+                     ClCl(BNOa))
+
+all_returns = as.matrix(na.omit(all_returns))
+
+```
+
+## Portfolios
+From the 8 ETFs listed, we defined three portfolios:
+
+* Equal Weight
+  + This portfolio holds all 8 ETFs in equal proportions. 
+* Bond Heavy
+  + This portfolio consists allocates 40% to each of the two bond funds (GOT & HYG) and spreads the remaining 20% out equally among the remaining 6 ETFS.
+* Foreign Heavy
+  + This portfolio consists allocates 40% to each of the two non-US equity funds (EWJ & MCHI) and spreads the remaining 20% out equally among the remaining 6 ETFS.
+  
+
+The equal weight portfolio is chosen as it simply represents our default approach. We do not have opinions the future returns of the ETFs so we would default to equal weighting all securities. We include the foreign-heavy portfolio because we would like to understand how our portfolio turns out if we decide to express the view that Chinese and Japanese equities will outperform US Equities. Last, we expect that the bond-heavy portfolio will be the safest choice, producing the lowest losses, but providing the least returns. This 'safe' portfolio is included because we want to understand the portfolio dynamics if we decide to invest conservatively.
+
+```{r, include=FALSE}
+# Create 3 portfolios.
+
+# Equal weighted /no opinion portfolio
+allocation_equal = rep(1/etf_count,etf_count)
+
+
+# Create bond allocation. 80% in two bond funds. Equal weight placed in the remaining
+bond_allocation = .8
+non_bond = (1-bond_allocation)/6
+allocation_bond_heavy = rep(non_bond,etf_count)
+allocation_bond_heavy[c(4,5)] = bond_allocation/2
+
+
+# Foreign Heavy
+foreign_allocation = .8
+non_foreign = (1-foreign_allocation)/6
+allocation_foreign = rep(non_foreign,etf_count)
+allocation_foreign[c(6,7)] = foreign_allocation/2
+
+
+# Compile three portfolios in a matrix
+portfolio_weights = as.data.frame(cbind(allocation_equal,allocation_bond_heavy,allocation_foreign))
+
+# Make sure each of the allocations sum to one
+colSums(portfolio_weights) == 1
+
+```
+
+## Simulation
+
+We perform a bootstrap simulation by randomly sampling the historical, joint probability distribution of our 8 ETFs. The parameters of the simulation are listed below:
+
+**Parameter** | **Assumption**
+----------|-----------
+Initial Capital | \$100,000
+Days Per Simulation | 20
+Number of Simulations | 10,000 
+
+
+```{r}
+# Run the simulation!
+
+
+# Simulation Parameters
+initial_capital = 100000
+days_in_simulation = 20
+simulation_count = 10000
+
+
+
+# all_ending_wealths = rep(0,simulation_count) # matrix to store ending wealths
+
+# Create 3 matrices to store the daily wealths of each portfolio
+# These will be 10,000 X 20 dim matrices
+equal_weight_wealths = data.frame(matrix(rep(0,days_in_simulation* simulation_count),nrow=simulation_count,ncol=days_in_simulation))
+bondy_heavy_wealths = data.frame(matrix(rep(0,days_in_simulation* simulation_count),nrow=simulation_count,ncol=days_in_simulation))
+foreign_heavy_wealths = data.frame(matrix(rep(0,days_in_simulation* simulation_count),nrow=simulation_count,ncol=days_in_simulation))
+
+
+for (simulation_num in 1:simulation_count) {
+  
+  # 3 Vectors containing the dollar value holding of each ETF 
+  equal_weight_port = portfolio_weights$allocation_equal * initial_capital
+  bond_heavy_port = portfolio_weights$allocation_bond_heavy * initial_capital
+  foreign_heavy_port = portfolio_weights$allocation_foreign * initial_capital  
+  
+  
+  for (day_num in 1:days_in_simulation) {
+    returns = resample(all_returns,1) # Sample returns
+    
+    # Calculate ending wealths after each day
+    equal_weight_port = equal_weight_port + equal_weight_port * returns
+    bond_heavy_port = bond_heavy_port + bond_heavy_port * returns
+    foreign_heavy_port = foreign_heavy_port + foreign_heavy_port * returns
+    
+    # Record the wealths for each portfolio at that point in time
+    equal_weight_wealths[simulation_num,day_num] = sum(equal_weight_port)
+    bondy_heavy_wealths[simulation_num,day_num] = sum(bond_heavy_port)
+    foreign_heavy_wealths[simulation_num,day_num] = sum(foreign_heavy_port)
+    
+    # Re balance each portfolio
+    equal_weight_port = sum(equal_weight_port) * portfolio_weights$allocation_equal
+    bond_heavy_port = sum(bond_heavy_port) * portfolio_weights$allocation_bond_heavy
+    foreign_heavy_port = sum(foreign_heavy_port) * portfolio_weights$allocation_foreign
+    
+  }
+
+}
+
+# Create an data frame containing info for all portfolios. This makes plotting easier with ggplot.
+equal_weight_wealths$Type = 'Equal Weight'
+foreign_heavy_wealths$Type = 'Foreign Heavy'
+bondy_heavy_wealths$Type = 'Bondy Heavy'
+
+all_ending_wealths = rbind(equal_weight_wealths,bondy_heavy_wealths)
+all_ending_wealths = rbind(all_ending_wealths,foreign_heavy_wealths)
+
+```
+
+## Simulation Results
+The results of the simulation are about in line with what you would expect. The foreign-heavy portfolio appears to be the riskiest in terms of variability and not offering much in terms of expected return to compensate The bond-heavy portfolio offers lower expected wealth, but provides less variability in the potential outcome. We can now examine some plots and summary statistics to better understand the portfolios.
+
+### Ending Wealth Distribution
+As a first look, we examine the distribution of endings wealth by portfolio. This gives us a quick and intuitive feel for what our portfolios could look like at the end of the 20 day period. The blue line below indicates the position of our starting wealth of \$100,000. This gives us a baseline to compare the rest of the results too by highlighting the result if we did not invest in anything. In all three portfolios there is a significant portion of the distribution to the left of this line! If you are horrified by the idea of capital loss, these investments may not be for you.
+
+One additional point worth noting here is that the equal weight portfolio appears to have a similar distribution to the foreign heavy portfolio, except the equal weight portfolio does not suffer from the extreme left tail possibilities as the foreign heavy portfolio does. This is a direct consequence of effective diversification. The foreign heavy portfolio is heavily allocated to the Chinese and Japanese markets. In periods where those economies perform poorly, this portfolio will perform poorly.
+
+```{r}
+
+
+all_ending_wealths %>%  ggplot(aes(x=X20)) + geom_histogram(fill='white', color='black', bins = 50) + facet_grid(Type ~.,scales = 'free') + geom_vline(xintercept = 100000, size=1,color='blue')+ scale_x_continuous(labels = scales::dollar_format()) + labs(title='Distribution of Ending Wealths By Portfolio')
+
+
+```
+
+### Profits and Summary Statistics
+After looking at the big picture, we can dive in further to get a more complete understanding of our portfolios. First, we plot the distribution of ending portfolio profits. These histograms are nearly identical to the total ending wealth distributions we just looked at, but these present the same information as a relative metric. Perhaps you want to understand your expected dollar profit from each portfolio. You can see this below:  
+```{r}
+# Var
+
+all_ending_wealths$profit = all_ending_wealths$X20 - initial_capital
+
+
+ggplot(all_ending_wealths,aes(profit)) + geom_histogram(fill='white', color='black', bins = 50) + facet_grid(Type ~.,scales = 'free') + scale_x_continuous(labels = scales::dollar_format()) + labs(title='Distribution of Ending Profits By Portfolio')
+
+```
+
+
+Next, we provide summary statistics for how the portfolios performed across the simulations:
+```{r}
+
+
+summary_stats = all_ending_wealths %>% group_by(Type) %>% summarise(VAR_.05 = quantile(profit,prob=.05), Minimum_Profit = min(profit),Max_Profit = max(profit), Average_Profit= mean(profit), MAD = mad(profit), Range = max(profit)-min(profit))
+
+knitr::kable(summary_stats, digits = 2,format.args = list(big.mark = ",",
+  scientific = FALSE))
+```
+There is a lot of information to unpack from the table above.
+
+
+* VAR: The 5% value at risk for each portfolio tells us the amount we can expect to lose *at least* 5% of the time. This is helpful in understanding the risk associated with the left tail of our distribution. Even our safest investment, the bond portfolio will lose over \$2,500 5% of the time! The VARs of both equal weight and foreign heavy take a big leap from the bond heavy portfolio, telling us that these portfolios will hurt much more when things turn out poorly.
+
+* Dispersion: The VAR is helpful information, but does not tell us the full story. For one thing, it ignores the worst case scenarios, but it also ignores all of the upside! We see the worst case scenarios through the minimum profit and get a feel for a best case scenario by looking at the max profit. Again, foreign-heavy portfolio does not look good. It gives us terrible worst case scenario, but a maximum profit that is about the same as the equal weight. Last, the mean absolute deviation(MAD) tells us what the average deviation is from the mean. This is probably the best one number summary for understanding the risk of each portfolio. 
+
+* Expected Profit: Our average profits tell us what our expected outcomes are. The interesting point here is that the foreign-heavy portfolio only has a marginally higher expected profit than the bond heavy portfolio and much less than the equal weight. That's not a lot of compensation for all of the risk you are taking on! 
+
+The key takeaway is that the foreign-heavy portfolio is almost certainly a bad idea. It provides little reward in the form of expected returns to compensate us for potentially devastating worst case losses, and higher variability. A more difficult decision is making a determination between the bond-heavy and equal weighted portfolios.
+
+
+### Stress Testing: Worst Case Scenarios
+
+As a final examination of the risk in each portfolio, we have selected the worst performing periods for each portfolio and plotted out the path of total wealth that occurred over the 20 day period. The idea here, is to explore on an emotional level, how the worst case scenarios would have felt in real time. It can be easy to look at summary statistics in a calm setting and rationally explore which portfolio is best, but actually living through bear markets is a different story all together. 
+
+```{r}
+
+# Getting the wealth paths for each portfolio for the worst profit.
+minports =  data.frame(all_ending_wealths %>%  group_by(Type) %>% filter(profit == min(profit)))
+wealth_paths = data.frame(t(minports %>% select(-Type,-profit)))
+colnames(wealth_paths) = c('Equal_Weight','Bond_Heavy', 'Foreign_Heavy')
+wealth_paths$Day = 1:20
+
+
+colors = c("Bond_Heavy" = "Green", "Equal_Weight" = "Blue", "Foreign_Heavy" = "Red")
+
+ggplot(wealth_paths,aes(x=Day)) + geom_line(aes(y=Bond_Heavy, color='Bond_Heavy'),size=1.5) + geom_line(aes(y=Equal_Weight ,color='Equal_Weight'),size=1.5) + geom_line(aes(y=Foreign_Heavy,color='Foreign_Heavy'),size=1.5) + scale_y_continuous(labels = scales::dollar_format()) + labs(x='Day', y='Total Wealth', color='Legend', title = 'Wealth Path for the Worst Performing Periods')  + scale_color_manual(values = colors)
+  
+
+
+``` 
+
+Ouch! These would have been a pretty painful experiences for just a 20 day period. The foreign-heavy portfolio stands out again for its remarkable ability to disappoint. This portfolio has a one day drop that would have been difficult to stomach in real time. Losing such a substantial portion of your wealth in a day would give even the thickest skin investors pause.
+
+## Concluding Thoughts
+
+Choosing a portfolio is no simple endeavor. What portfolio is "correct" can differ among people based on their particular circumstances. Time horizon, liquidity needs, and risk tolerance are among three of the top factors, but there can be many variables at play. What we can help with, is provide information that should help investors make the most informed decision possible. In this particular case, we were able to essentially eliminate the foreign-heavy portfolio from consideration which will allow the investor to choose between the remaining portfolios, based on which one more closely aligns with their personal needs.
+
+
+\  
+\  
+\  
+\  
+\  
+\  
+
+
+
+```{r echo=FALSE}
+df = read.csv('social_marketing.csv')
+```
+
+# Market Segmentation
+
+The data we are analyzing was collected in the course of a market-research study using followers of the Twitter account of a large consumer brand called NutrientH20. Over the course of a seven-day period, the follower's tweet were categorized using 36 different categories, each representing a broad area of interest.
+
+
+## K-Means Clustering
+To help NutrientH20 better understand its social-media audience, we used k-means clustering to group its twitter followers into different potential marketing segments. Prior to fitting the model, we removed the following variables, as they would not provide any beneficial insight to our problem: chatter, uncategorized, adult, and spam. 
+
+```{r include=FALSE}
+#removed user code, chatter, uncategorized, adult, and spam columns
+X = df[,-c(1,2,6,36,37)]
+
+# center and scale the data
+X = scale(X, center=TRUE, scale=TRUE)
+
+# Extract the centers and scales from the rescaled data
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+```
+
+### Choosing the Number of Clusters
+One of the difficulties in using K-Means Clustering is deciding how many clusters to use. We decided to use the Elbow method which looks at the total Within-Cluster Sum of Squares as a function of the number of clusters; one should choose a number of clusters so that adding another cluster doesn’t significantly improve the total WSS.
+
+```{r echo=FALSE}
+# This takes a bit to run
+# numClusters = c(2:3)
+numClusters = c(2:15)
+wss_all = NULL
+
+set.seed(123)
+for(c in numClusters){
+  wss = sum(kmeanspp(X, k=c, nstart=25)$withinss)
+  wss_all <- c(wss_all, wss)
+}
+
+#plotting the WSS by choosing various K's
+plot(numClusters, wss_all, type = 'b',
+     xlab = "Number of Clusters", ylab = "Within-Cluster Sum of Squares", 
+     main = "WSS vs Number of Clusters")
+```
+
+Looking at the elbow plot above, we'll use 6 clusters for our analysis.
+
+
+Another downside of K-means clustering is choosing the initial values, or "seeds", for the clusters. We use the K-means++
+method to address this issue. The clustering will show us what tweet topics are typically posted together and help us form
+consumer personas for the marketing department to target.
+
+```{r echo=FALSE}
+## Using kmeans++ initialization
+set.seed(123)
+clust = kmeanspp(X, k=6, nstart=25)
+```
+
+### Cluster 1
+```{r echo=FALSE}
+knitr::kable(head(sort((clust$center[1,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**Young Parents:** With interests such as sports fandom, religion, food, parenting, and school, this segment represents
+young parents. They will want to provide their children with high quality water.
+
+
+### Cluster 2
+```{r echo=FALSE}
+knitr::kable(head(sort((clust$center[2,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**Fitness Gurus:** With health nutrition and personal fitness the predominant categories, this grouping represents
+the healthy and fit archetype. They are likely to have a favorite water brand and stick to it.
+
+
+### Cluster 3
+
+```{r echo=FALSE}
+knitr::kable(head(sort((clust$center[3,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**Millennial Influencers:** This segment is interested in cooking, photo_sharing, fashion, and beauty and likely consists of social media influencers. They like to share things with their network and would be good marketers of NutrientH20.
+
+
+### Cluster 4
+
+```{r echo=FALSE}
+
+knitr::kable(head(sort((clust$center[4,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**College Student:** This segment shows interest in college, online gaming, photo sharing, and sports. This sounds
+like a typical college student who likely isn't too picky about what kind of water they drink.
+
+
+### Cluster 5
+
+```{r echo=FALSE}
+knitr::kable(head(sort((clust$center[5,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**Traveling Businessman:** This segment has interests in politics, travel, and news and represents the traveling businessman.
+They would be a good group to target as they are frequently in airports and buying water bottles.
+
+
+### Cluster 6
+
+```{r echo=FALSE}
+knitr::kable(head(sort((clust$center[6,]*sigma + mu), decreasing=TRUE)), digits = 2)
+```
+**Average Consumer:** This cluster seems to be very balanced among various categories and doesn't provide too much
+information into a specific archetype.
+
+
+## Market Segments
+
+1) **Young Parents**
+2) **Fitness Gurus**
+3) **Millennial Influencers**
+4) **College Student**
+5) **Traveling Businessman**
+6) **Average Consumer**
+
+NutrientH20 can target these market segments to improve their sales and popularity!
+
+
+
+\  
+\  
+\  
+\  
+\  
+\  
+
+# Author Attribution
+
+
+## Loading libraries 
+Load libraries like tm, tidyverse, slam, proxy, etc.
+```{r}
+library(tm) 
+library(tidyverse)
+library(slam)
+library(proxy)
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(Rcpp)
+```
+
+## Defining functions and Reading the training data
+The readPlain function is defined, which reads in the lines from a text file.
+The content and authors of all text files (2500 files) are read-in and the data is stored in a Corpus object. 
+
+```{r}
+readerPlain = function(fname){
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') }
+
+#reading all the sub-folders in the train folder
+train_folders=Sys.glob('ReutersC50/C50train/*')
+
+
+#Getting all the file names in the sub-folders and making a vector with author names
+all_files=NULL
+labels=NULL
+
+for (x in train_folders) { 
+  author_name=substring(x,first=21)
+  article=Sys.glob(paste0(x,'/*.txt'))
+  all_files=append(all_files,article)
+  labels=append(labels,rep(author_name,length(article)))
+}
+
+#Reading the files and removing .txt
+files_combined = lapply(all_files, readerPlain) 
+names(files_combined) = all_files
+
+
+#Creating a text-mining corpus
+articles_raw = Corpus(VectorSource(files_combined))
+
+```
+
+## Training data - Pre-processing, removing the stop words, and Tokenization
+For the content of training files, some cleaning and pre-processing is done such as:
+
+* Converting all text to lowercase, removing all numbers, removing all punctuation, stripping extra white spaces, and removing the stop words.
+* A DTM(document-term matrix) is created where the words in the documents are the columns and each document is a row. Standardization of the DTM is done using TF-IDF.
+
+```{r}
+
+##Pre-processing and tokenization
+documents = articles_raw %>%
+  tm_map(content_transformer(tolower))  %>%             # make everything lowercase
+  tm_map(content_transformer(removeNumbers)) %>%        # remove numbers
+  tm_map(content_transformer(removePunctuation)) %>%    # remove punctuation
+  tm_map(content_transformer(stripWhitespace))          # remove excess white-space
+
+#remove stop words
+documents = tm_map(documents, content_transformer(removeWords), stopwords("en"))
+
+#Creating document-term matrix
+DTM_train = DocumentTermMatrix(documents)
+DTM_train
+
+#inspect
+inspect(DTM_train[1:10,1:20])
+
+#remove sparse terms
+DTM_train = removeSparseTerms(DTM_train, 0.95)
+
+#TF-IDF matrix
+train_tf_idf_mat = weightTfIdf(DTM_train)
+DTM_train = as.matrix(train_tf_idf_mat)
+train_tf_idf_mat 
+```
+
+## Loading the Test Data
+Similar to train data, the test data is read-in and stored as a corpus object.
+
+```{r}
+#reading all the sub-folders in the test folder
+test_folders=Sys.glob('ReutersC50/C50test/*')
+
+
+#Getting all the file names in the sub-folders and making a vector with author names
+test_all_files=NULL
+test_labels=NULL
+
+for (x in test_folders) { 
+author_name=substring(x,first=20)
+article=Sys.glob(paste0(x,'/*.txt'))
+test_all_files=append(test_all_files,article)
+test_labels=append(test_labels,rep(author_name,length(article)))
+}
+
+#Reading the files and removing .txt
+test_files_combined = lapply(test_all_files, readerPlain) 
+names(test_files_combined) = test_all_files
+#names(files_combined) = sub('.txt', '', names(files_combined))
+
+
+#Creating a text-mining corpus
+test_articles_raw = Corpus(VectorSource(test_files_combined))
+test_articles_raw
+```
+
+## Test data - Pre-processing, removing the stop words, and Tokenization
+Similar to train data, cleaning and pre-processing of test data is done.
+
+```{r}
+
+##Pre-processing and tokenization
+test_documents = test_articles_raw %>%
+  tm_map(content_transformer(tolower))  %>%             # make everything lowercase
+  tm_map(content_transformer(removeNumbers)) %>%        # remove numbers
+  tm_map(content_transformer(removePunctuation)) %>%    # remove punctuation
+  tm_map(content_transformer(stripWhitespace))          # remove excess white-space
+
+#remove stop words
+test_documents = tm_map(test_documents, content_transformer(removeWords), stopwords("en"))
+test_documents
+```
+
+## Making sure that training and test sets have the same columns (words)
+Since there are many additional words which don't appear in the training dataset but are present in test dataset, we decided to remove all those words from the test dataset and only keep the ones common in both the datasets.
+
+```{r}
+DTM_test=DocumentTermMatrix(test_documents,list(dictionary=colnames(DTM_train)))
+test_tf_idf_mat = weightTfIdf(DTM_test)
+DTM_test=as.matrix(test_tf_idf_mat) 
+test_tf_idf_mat
+
+DTM_train = DTM_train[,which(colSums(DTM_train) != 0)] 
+DTM_test = DTM_test[,which(colSums(DTM_test) != 0)]
+
+DTM_test_f = DTM_test[,intersect(colnames(DTM_test),colnames(DTM_train))]
+DTM_train_f = DTM_train[,intersect(colnames(DTM_test_f),colnames(DTM_train))]
+
+```
+
+
+## Principal Component Analysis - Reducing the dimensions
+Since there are hundreds of words (variables) in the training and test dataset, it is better to reduce the number of variables using principal component analysis. 
+400 principal components explain almost 80% of the variance. Thus, taking 400 PCs and building the models. 
+
+
+```{r}
+pca = prcomp(DTM_train_f,scale=TRUE)
+plot(pca,type='line') 
+
+var = apply(pca$x, 2, var)  
+prop = var/sum(var)
+plot(cumsum(pca$sdev^2/sum(pca$sdev^2)))
+
+#setting up datasets for final modelling
+train_class = data.frame(pca$x[,1:400])
+train_class['author']=labels
+train_load = pca$rotation[,1:400]
+test_class = scale(DTM_test_f) %*% train_load
+test_class = as.data.frame(test_class)
+test_class['author']=test_labels
+```
+
+# Classification models
+After preparing the train and test datasets, we can now start to build classification models and test their accuracy on test dataset. 
+
+## KNN
+Starting with KNN classification, we take K=10 and the accuracy we get is 35.4%
+
+```{r}
+library(class)
+train_knn_y=as.factor(train_class$author)
+test_knn_y=as.factor(test_class$author)
+train_knn_x=subset(train_class, select=-c(author))
+test_knn_x=subset(test_class,select=-c(author))
+
+
+set.seed(1)
+knn=knn(train_knn_x,test_knn_x,train_knn_y,k=10)
+#prediction
+knn_calc=as.data.frame(cbind(knn,test_knn_y))
+knn_check=ifelse(as.integer(knn)==as.integer(test_knn_y),1,0)
+sum(knn_check)
+sum(knn_check)*100/nrow(knn_calc) #802
+```
+
+
+## Naive Bayes
+Using naive bayes model, we get an accuracy of 46.92%.
+
+```{r}
+library(e1071)
+train_class$author=as.factor(train_class$author)
+test_class$author=as.factor(test_class$author)
+nb=naiveBayes(author~.,data=train_class)
+summary(nb)
+nb_predict=predict(nb,test_class)
+
+#predicted_nb=pred_naive
+#actual_nb=as.factor(ts_class$author)
+
+nb_check=as.data.frame(cbind(test_class$author,nb_predict))
+nb_check$mark=ifelse(nb_check$V1==nb_check$nb_predict,1,0)
+sum(nb_check$mark)*100/nrow(nb_check)
+
+```
+
+## Random Forest
+With a random forest model, the accuracy obtained is 70.6%
+
+```{r}
+library(randomForest)
+set.seed(1)
+rf=randomForest(author~.,data=train_class, mtry=10,importance=TRUE)
+
+#prediction
+rf_predict=predict(rf,data=test_class)
+
+#calculating accuracy
+rf_check=as.data.frame(cbind(test_class$author,rf_predict))
+rf_check$mark=ifelse(rf_check$V1==rf_check$rf_predict,1,0)
+sum(rf_check$mark)*100/nrow(rf_check)
+```
+
+
+## Conclusion
+Thus, 3 classification models are made and the most accurate model was found to be Random Forest with an accuracy of 70.6%
+
+
+\  
+\  
+\  
+\  
+\  
+\  
+
+
+# Association Rule Mining
+
+## Reading the data
+
+```{r}
+groceries = read.transactions("groceries.txt", format = "basket", sep = ",", rm.duplicates = FALSE)
+```
+
+## Exploring transactions and items
+
+```{r}
+summary(groceries)
+dim(groceries)
+```
+
+The overall structure of the data consisted of 9835 transactions across 169 items. 2159 transactions with 1 item, 1643 transactions with 2 items and so on.
+
+## Top 10 Popular & Unpopular Items
+
+```{r}
+DEC = as.data.frame( sort(itemFrequency(groceries), decreasing=FALSE)[0:10] )
+DEC$Val =  percent(DEC$`sort(itemFrequency(groceries), decreasing = FALSE)[0:10]`)
+DEC$name = colnames( t(DEC) )
+
+ggplot(data=DEC, aes(x= reorder(name, -Val), y=Val)) +
+  geom_bar(stat="identity", fill="darkred") +
+  geom_text(aes(label=Val), vjust=1.6, color="white", size=3.5)+
+  theme_minimal()+
+  xlab("Rank") +
+  ylab("Least Ordered Items") +
+  theme( axis.title.y = element_text(color="darkred", size=14, face="bold"),
+         axis.title.x = element_text(color="darkred", size=14, face="bold"),
+         axis.text.x = element_text(angle = 90))
+
+INC = as.data.frame( sort(itemFrequency(groceries), decreasing=TRUE)[0:10] )
+INC$Val = percent(INC$`sort(itemFrequency(groceries), decreasing = TRUE)[0:10]`)
+INC$name = colnames( t(INC) )
+
+ggplot(data=INC, aes(x= reorder(name, -Val), y=Val)) +
+  geom_bar(stat="identity", fill="darkgreen") +
+  geom_text(aes(label=Val), vjust=1.6, color="white", size=3.5)+
+  theme_minimal()+
+  xlab("Rank") +
+  ylab("Top Ordered Items") +
+  theme( axis.title.y = element_text(color="darkgreen", size=14, face="bold"),
+         axis.title.x = element_text(color="darkgreen", size=14, face="bold"),
+         axis.text.x = element_text(angle = 90))
+```
+
+Based on the graphs above the two most common grocery items were whole milk and vegetables while the not so common items were baby food and storage product. From this analysis, there were two concerning items in the top 10 purchased groceries list. Individuals frequently purchase soda and shopping bags. Soda's presence on the list was not a main concern, the concern lies in the fact that it held a higher position than water. Another insight is the frequent purchase of shopping bags, as climate change is a growing issue, reusable bags should be the standard alternative and promoted at all grocery stores. 
+
+## Building a Model 
+Deciding the Support-
+Since we have a lot of items, let's select a minimum support of 0.01
+However, as we can see below, keeping a support of 0.01 will remove almost half of the items.
+(Since the support works on pair-wise criteria, the exact exclusions will be different but we can still get a sense of the support value)
+Items with support greater than threshold 0.01:
+
+```{r}
+summary(itemFrequency(groceries)>0.01)
+```
+
+Thus, we try with a support of 0.001
+Here, we see that we are removing 12 least-ordered items from the analysis, which is acceptable.
+Items with support greater than threshold 0.001:
+
+```{r}
+summary(itemFrequency(groceries)>0.001)
+```
+
+## Apriori model
+Using a support of 0.001 and confidence of 0.50, i.e. the conditional probability of A given B should be at least 50%. We chose confidence=0.50 as there are so many items and orders, so its better to start with a value somewhere in the middle.
+Result= We get 5668 rules- 11 rules with 2 items, 1461 rules with 3 items, 3211 rules with 4 items, 939 rules with 5 items and 46 rules with 6 items.
+
+```{r}
+basket_model1 = apriori(groceries, parameter = list(support = 0.001, confidence = 0.50, target='rules'))
+summary(basket_model1)
+```
+
+## Looking at some specific rules
+Here we see the top 10 associations sorted by maximum lift. We see that all these rules have a very low support, just above the threshold of 0.001. Also, there are some rules which have a length of 4/5/6. Thus, to refine our model we can increase the support threshold and decrease the maximum length of rules to 3. 
+
+```{r}
+arules::inspect(sort(basket_model1, by = 'lift')[1:10])
+```
+
+## Refined Model
+Change support to 0.003, maxlength to 4.
+Result = A set of 414 rules- 5 rules with 2 items, 281 rules with 3 items, 128 rules with 4 items.
+
+```{r}
+basket_model2 = apriori(groceries, parameter = list(support = 0.003, confidence = 0.50, target='rules', maxlen = 4))
+summary(basket_model2)
+```
+
+## Analysis
+(Sorted by highest lift)
+The rules make sense as they are products which are related and bought often very often. 
+
+```{r}
+arules::inspect(sort(basket_model2, by = 'lift')[1:10])
+```
+
+## To get a dataframe of rules:
+
+```{r}
+df = as(basket_model2, "data.frame")
+df[1:10,]
+```
+
+Thus, we successfully completed an association analysis on the grocery dataset to recommend new products to consumers based on the products in their carts. 
+
