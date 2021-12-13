@@ -1,5 +1,9 @@
 # Building a Crowdsourced Recommendation System
 
+**Link to Notebook: [https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Analytics_for_Unstructured_Data/Beer_Recommendations/HW2_Unstructured_Final%20v1.ipynb](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Analytics_for_Unstructured_Data/Beer_Recommendations/HW2_Unstructured_Final%20v1.ipynb)**
+
+<br><br>
+
 High level description: The objective of this group assignment is to create the building blocks of a crowdsourced recommendation system. This recommendation system should accept user inputs about desired attributes of a product and come up with 3 recommendations. 
 
 Obtain reviews of craft beer from beeradvocate.com. I would suggest using the following link, which shows the top 250 beers sorted by ratings: 

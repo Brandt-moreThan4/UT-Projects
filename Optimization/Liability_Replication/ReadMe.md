@@ -1,5 +1,9 @@
 # Creating A Liability-Replicating Portfolio
 
+**Link to Code: [Notebook](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Optimization/Liability_Replication/Project_1_Final.ipynb)**
+
+<br>
+
 Problem Description
 Bonds are a form of debt issued by governments and companies. You can purchase a bond for a given price with maturity date in the future at which point you will receive the face value of the bond. For example, you could purchase a bond for $98 (price) and at maturity the bond issuer will pay you $100 (face value). Coupon bonds are the bonds that offer a periodic payment during the life of the bond. Let’s say you purchase a bond for $102 with an annual coupon payment of $5, a face value of $100 and maturity three years from now. Then you will pay $102 immediately to purchase the bond, receive $5 coupon payments at the end of years 1, 2 and finally $5+$100=$105 at the end of year 3. For additional information see http://guides.wsj.com/personal-finance/investing/what-is-a-bond/. 
 
