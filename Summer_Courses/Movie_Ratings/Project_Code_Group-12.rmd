@@ -1,0 +1,300 @@
+---
+title: "Group 12 Project Code"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r include=FALSE}
+# Load Libraries
+library(tree)
+library(readxl)
+library(plyr)
+library(dplyr)
+library(gbm) 
+library(randomForest) 
+library(MASS)
+library(rpart)
+library(rpart.plot)
+set.seed(42)
+
+movies_all <- read_excel("movies_cleaned.xlsx") # Read in all data
+movies_all <- movies_all %>% mutate_if(is.character,as.factor) # Convert character data to factor
+
+# Divide data into training and test
+n = nrow(movies_all)
+train_size = floor(n*.8) # 80% of data is used in training
+train_indexes = sample(1:n,train_size) # Randomly sampled indexes to subset data with
+
+movies_train = movies_all[train_indexes,] 
+movies_test = movies_all[-train_indexes,]  
+
+# Get std of average rating of our data to use as a reference to compare later models against
+
+std_test = var(movies_test$avg_rating)^.5
+std_train = var(movies_train$avg_rating)^.5
+std_all = (movies_all$avg_rating)^.5
+
+```
+
+We will be comparing the Root MSE of our models on the test data set against the standard deviation of the data itself. Which is: 1.6565.
+
+
+
+# Linear Regression
+
+```{r echoe = FALSE}
+#Alter data slightly to use for regression
+#Delete Age column since it is categorical. Also dropping stream count because it is a linear combo of other vars and 16+.
+train_regression = movies_train[,-c(1,13,20)] 
+test_regression = movies_test[,-c(1,13,20)] 
+
+linear_relation <- lm(avg_rating~.,data = train_regression) # fit model on training data
+summary(linear_relation) #summarize
+
+# How does it perform on out of sample data?
+pred_Rating_lr <- predict(linear_relation, newdata = test_regression)
+
+#----
+#Using subset selection to trim the basic regression
+
+
+null = lm(avg_rating~1, data=train_regression)
+full = lm(avg_rating~., data=train_regression)
+
+
+regForward = step(null, scope=formula(full), direction="forward")
+regBack = step(full, direction="backward")
+regBoth = step(null, scope=formula(full), direction="both")
+
+predict_forward <- predict(regForward, newdata = test_regression)
+predict_backward <- predict(regBack, newdata = test_regression)
+predict_both <- predict(regBoth, newdata = test_regression)
+
+#check for RMSE between all models
+rmse_lr   = sqrt(mean((pred_Rating_lr - test_regression$avg_rating)^2))
+rmse_fwd  = sqrt(mean((predict_forward - test_regression$avg_rating)^2))
+rmse_bck  = sqrt(mean((predict_backward - test_regression$avg_rating)^2))
+rmse_step = sqrt(mean((predict_both - test_regression$avg_rating)^2))
+
+# All the root MSE's are about the same.
+
+rmse_lr
+rmse_step
+rmse_bck
+rmse_fwd
+# We just pick the 'both' model because it has less coefficient + similar root mse
+length(regForward$coefficients)
+length(regBack$coefficients)
+length(regBoth$coefficients)
+
+
+summary(regForward)
+summary(regBack)
+summary(regBoth)
+
+# Plot predictions against actuals to see relationship, using our best model. 
+plot(test_regression$avg_rating,predict_both,
+     xlab='Actual Rating', ylab='Predicted Rating', main = 'Prediction Vs Actual Fit')
+abline(0,1,col = "red")
+
+```
+
+
+
+
+# Regression Tree
+
+```{r}
+
+
+train_tree = movies_train[,-c(15,16,17,18,19,20)] # Delete the age dummies
+test_tree = movies_test[,-c(15,16,17,18,19,20)] 
+
+
+# Start out with a massively over fit tree
+big.tree = rpart(avg_rating~.,
+                 method = "anova",
+                 data = train_tree,
+                 control = rpart.control(minsplit = 5,cp = .0005))
+
+length( unique( big.tree$where ))  # This tree has a bunch of terminal nodes.
+
+# look at cross-validation
+par(mfrow=c(1,1))
+plotcp(big.tree) # Let's look at cross validation to understand tree. 
+# Looks like our complexity parameter should be much higher
+bestcp = big.tree$cptable[which.min(big.tree$cptable[,"xerror"]),"CP"] # Get the best param
+cat('bestcp: ',bestcp,'\n')
+
+
+#plot best tree
+par(mfrow=c(1,1))
+best.tree = prune(big.tree,cp=bestcp)
+plot(best.tree,uniform=TRUE,branch=.5)
+text(best.tree,digits=4,use.n=TRUE,fancy=TRUE,bg='lightblue')
+rpart.plot(best.tree)
+
+
+# Predict out of sample. 
+yhat = predict(best.tree,newdata = test_tree)
+root_mse_tree = mean((yhat - test_tree$avg_rating)^2)^.5
+root_mse_tree
+
+```
+
+
+# Random Forest
+
+```{r}
+
+# -----------Random Forest------------
+rows_of_training = nrow(train_tree)
+rows_of_test = nrow(test_tree)
+predictor_count = ncol(train_tree) - 1
+#forest size
+forest_size = c(10,500,5000)
+variables_per_tree = floor(sqrt(predictor_count))
+nset = length(forest_size)
+
+get_root_mse <- function (predictions, actuals) {
+  squared_residuals = (predictions - actuals)^2
+  root_mse = mean(squared_residuals)^.5
+  return (root_mse)
+}
+
+for(i in 1:nset) {
+  cat('doing movies rf: ',i,'\n')
+  
+  rffit = randomForest(avg_rating~.,
+                       data=train_tree,
+                       ntree=forest_size[i],
+                       mtry=variables_per_tree,
+                       maxnodes=15) # maximum number of nodes per tree
+  yhat = predict(rffit)
+  root_mse_tree = get_root_mse(yhat, train_tree$avg_rating)
+  cat('Root MSE for forest size of: ',forest_size[i],' is ', root_mse_tree, '\n')
+}
+
+# Plot how the error evolves in the biggest forest as more trees were added.
+par(mfrow=c(1,1))
+plot(rffit) 
+
+# Root MSE for both 500 and 5000 trees are about the same, so we will choose 500 as our model because it is less complex
+# And you can see that the error rat does not improve much after a few hundred trees in this plot.
+
+chosen_model = rffit = randomForest(avg_rating~.,
+                                    data=test_tree,
+                                    ntree=500,
+                                    mtry=variables_per_tree,
+                                    maxnodes=15) # maximum number of nodes per tree
+
+# Test chose model out of sample
+test_predictions = predict(chosen_model, newdata= test_tree)
+root_mse_tree = get_root_mse(test_predictions, test_tree$avg_rating)
+root_mse_tree
+varImpPlot(chosen_model)
+```
+
+
+
+
+# Boostin
+
+```{r}
+
+# When using boosting. We further divide our training data into a train and validate
+n = nrow(train_tree)
+train_size = floor(n*.8) # 80% of data is used in training
+train_indexes = sample(1:n,train_size) # Randomly sampled indexes to subset data with
+train_boost = train_tree[train_indexes,]
+val_boost = train_tree[-train_indexes,]
+
+
+#Build for loop with different parameters
+
+#depth
+idv = c(3, 6, 9)
+
+#number of trees
+ntv = c(30, 300, 3000)
+
+#lambda / shrinkage
+lamv=c(0.001, 0.01, 0.1)
+
+param_combos = expand.grid(idv,ntv,lamv) # Get a grid containing all parameter combinations to try
+colnames(param_combos) = c('tdepth','ntree','lam')
+
+nset = nrow(param_combos)
+
+olb = rep(0,nset)
+
+bfitv = vector('list',nset) # Don't know what this is
+
+for(i in 1:nset) {
+  cat('doing boost ',i,' out of ',nset,'\n')
+  tempboost = gbm(avg_rating~.,
+                  data = train_boost,
+                  distribution = 'gaussian',
+                  interaction.depth = param_combos[i,1],
+                  n.trees = param_combos[i,2],
+                  shrinkage = param_combos[i,3]
+  )
+  
+  ofit = predict(tempboost, 
+                 newdata = val_boost,
+                 n.trees = param_combos[i,2]
+  )
+  
+  olb[i] = sum((val_boost$avg_rating - ofit)^2 )
+  
+  bfitv[[i]] = tempboost
+}
+
+
+#--------------------------------------------------
+#print losses
+print(cbind(param_combos,olb)) # Loss table depicting SSE for each parameter combo
+best_param_index = which.min(olb)
+best_params = param_combos[best_param_index,]
+#--------------------------------------------------
+
+
+#--------------------------------------------------
+#final trees model. 
+final.boost.model = gbm(avg_rating~.,
+                        data =train_boost,
+                        distribution = 'gaussian',
+                        interaction.depth = best_params$tdepth,
+                        n.trees = best_params$ntree,
+                        shrinkage = best_params$lam)
+
+yhat = predict(final.boost.model,newdata = test_tree)
+
+root_mse_boost = sqrt(mean((yhat - test_tree$avg_rating)^2) )
+root_mse_boost
+
+
+# var importance Graph
+p=ncol(test_tree)-1
+
+vsum=summary(final.boost.model,plotit=FALSE) #this will have the variable importance info
+
+row.names(vsum)=NULL #drop varable names from rows.
+#plot variable importance
+#the package does this automatically, but I did not like the plot
+plot(vsum$rel.inf,axes=F,pch=16,col='red')
+axis(1,labels=vsum$var,at=1:p)
+axis(2)
+for(i in 1:p) lines(c(i,i),c(0,vsum$rel.inf[i]),lwd=4,col='blue')
+
+#Option 2
+summary(final.boost.model)
+
+
+```
+
