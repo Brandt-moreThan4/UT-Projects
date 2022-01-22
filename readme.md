@@ -8,7 +8,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 
 ### [Finance](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance)
 * [Automated_Betas_from_Comps](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Automated_Betas_from_Comps)
-* [Index_Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Index_Replication)
+* [S&P Index_Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Index_Replication)
 * [R_and_D_Firm_Returns](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/R_and_D_Firm_Returns)
 * [Security_Market_Line](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Security_Market_Line)
 * [Simulated_Portfolios](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Simulated_Portfolios)
@@ -19,7 +19,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 
 ### [Optimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization) 
 * [Liability-Matching Optimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Liability_Replication)
-* [Index Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Index_Replication)
+* [NASDAQ Index Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Index_Replication)
 * [Variable Selection: Lasso vs Optimization](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Lasso_vs_Optimization)
   
   
@@ -34,7 +34,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 * [HW2-Bias_Variance_and_SGD](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/HW2-Bias_Variance_and_SGD/MIS382N_HW2-1.ipynb)
 * [HW3-SGD_Momentum_and_data_exploration](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/HW3-SGD_Momentum_and_data_exploration/MIS382N_HW3.ipynb)
 * [HW4-Classification_and_CounterFactuals](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/HW4-Classification_and_CounterFactuals/MIS382N_HW4_1.ipynb)
-* [HW5-Ensemble_Methods](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization/Liability_Replication)
+* [HW5-Ensemble_Methods](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Advanced_Machine_Learning/HW5-Ensemble_Methods/MIS382N_HW5_Questions%20(1).ipynb)
 
 
 
