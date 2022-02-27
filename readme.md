@@ -6,6 +6,9 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 
 ## Courses
 
+### [Optimization II]()
+* [MNEST Image Classification with Convolutional Neural Network]()
+
 ### [Finance](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance)
 * [Automated_Betas_from_Comps](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Automated_Betas_from_Comps)
 * [S&P Index_Replication](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Index_Replication)
