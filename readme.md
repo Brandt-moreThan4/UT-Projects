@@ -2,15 +2,15 @@
 
 For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs.utexas.edu/Master-of-Science-in-Business-Analytics/Academics/Curriculum).
 
-*Note: I'm still working on providing appropriate descriptions for all of the projects displayed. For now, many of the projects just provide links to the directions and then a link to the notebook with the code. At some point I will go through and make sure all of the README files have more in depth descriptions of the work done.*
+*Note: I'm still working on providing appropriate descriptions for all of the projects displayed. For now, many of the projects just provide links to the directions and then a link to the notebook with the code. At some point I will probably go through and make sure all of the README files have more in depth descriptions of the work done.*
 
 ## Courses
 
 ### [Financial_Modeling](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling)
 * [SEC Edgar Scraper](https://github.com/Brandt-moreThan4/msba-sec-edgar-downloader)
-* [Forecasting SPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_SPS)
-* [Forecasting EPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_EPS)
-* [Forecasting Volatility](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_Volatility)
+* [Forecasting SPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finanancial_Modeling/Forecasting_SPS)
+* [Forecasting EPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling/Forecasting_EPS)
+* [Forecasting Volatility](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling/Forecasting_Volatility)
 
 
 ### [Optimization II](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization_II)
