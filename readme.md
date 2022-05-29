@@ -6,8 +6,18 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 
 ## Courses
 
+### [Financial_Modeling](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling)
+* [SEC Edgar Scraper](https://github.com/Brandt-moreThan4/msba-sec-edgar-downloader)
+* [Forecasting SPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_SPS)
+* [Forecasting EPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_EPS)
+* [Forecasting Volatility](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Forecasting_Volatility)
+
+
 ### [Optimization II](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization_II)
 * [MNEST Image Classification with Convolutional Neural Network](https://github.com/Brandt-moreThan4/UT-Projects/blob/master/Optimization_II/hw1.ipynb)
+* [Stochastic Programming](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization_II/Stochastic_Programming)
+* [Dynamic Programming](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization_II/Dynamic_Programming)
+* [Reinforcement Learning](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Optimization_II/Reinforcement_Learning)
 
 ### [Finance](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance)
 * [Automated_Betas_from_Comps](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finance/Automated_Betas_from_Comps)
