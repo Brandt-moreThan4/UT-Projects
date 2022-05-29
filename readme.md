@@ -8,7 +8,7 @@ For a look at the curriculumn see: [MSBA course curriculumn](https://www.mccombs
 
 ### [Financial_Modeling](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling)
 * [SEC Edgar Scraper](https://github.com/Brandt-moreThan4/msba-sec-edgar-downloader)
-* [Forecasting SPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Finanancial_Modeling/Forecasting_SPS)
+* [Forecasting SPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling/Forecasting_SPS)
 * [Forecasting EPS](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling/Forecasting_EPS)
 * [Forecasting Volatility](https://github.com/Brandt-moreThan4/UT-Projects/tree/master/Financial_Modeling/Forecasting_Volatility)
 
